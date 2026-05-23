@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import json
-import os
 import time
+import os
 from dataclasses import dataclass
 from typing import Any
 
@@ -27,9 +27,9 @@ class LLMResponse:
 
 
 class LLMClient:
-    """Wrapper around the Anthropic API with retry logic and structured output."""
+    """Wrapper around the OpenAI API with retry logic and structured output."""
 
-    DEFAULT_MODEL = "claude-sonnet-4-20250514"
+    DEFAULT_MODEL = "gpt-4o"
     MAX_RETRIES = 3
     RETRY_DELAY = 1.0
 
@@ -39,7 +39,7 @@ class LLMClient:
         model: str | None = None,
         max_tokens: int = 4096,
     ):
-        self._api_key = api_key or os.getenv("ANTHROPIC_API_KEY", "")
+        self._api_key = api_key or os.getenv("OPENAI_API_KEY", "")
         self._model = model or self.DEFAULT_MODEL
         self._max_tokens = max_tokens
         self._client = None  # lazy init
@@ -47,10 +47,10 @@ class LLMClient:
     def _get_client(self):
         if self._client is None:
             try:
-                import anthropic
-                self._client = anthropic.Anthropic(api_key=self._api_key)
+                import openai
+                self._client = openai.OpenAI(api_key=self._api_key)
             except ImportError:
-                raise RuntimeError("Install anthropic: pip install anthropic")
+                raise RuntimeError("Install openai: pip install openai")
         return self._client
 
     def complete(
@@ -63,22 +63,29 @@ class LLMClient:
         """Send a message and get a completion with retry logic."""
         client = self._get_client()
 
+        kwargs: dict[str, Any] = {
+            "model": self._model,
+            "max_tokens": self._max_tokens,
+            "temperature": temperature,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+        }
+        if json_mode:
+            kwargs["response_format"] = {"type": "json_object"}
+
         for attempt in range(self.MAX_RETRIES):
             try:
-                response = client.messages.create(
-                    model=self._model,
-                    max_tokens=self._max_tokens,
-                    system=system_prompt,
-                    messages=[{"role": "user", "content": user_message}],
-                    temperature=temperature,
-                )
+                response = client.chat.completions.create(**kwargs)
+                choice = response.choices[0]
 
                 return LLMResponse(
-                    content=response.content[0].text,
+                    content=choice.message.content or "",
                     model=response.model,
-                    input_tokens=response.usage.input_tokens,
-                    output_tokens=response.usage.output_tokens,
-                    stop_reason=response.stop_reason,
+                    input_tokens=response.usage.prompt_tokens,
+                    output_tokens=response.usage.completion_tokens,
+                    stop_reason=choice.finish_reason,
                 )
             except Exception as e:
                 if attempt == self.MAX_RETRIES - 1:
