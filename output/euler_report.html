@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forensic Report: Euler Finance Exploit</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        /* Diagram legend */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+        .ld-attacker { background: #6b0f1a; border: 1px solid #e74c3c; }
+        .ld-protocol  { background: #0d2137; border: 1px solid #2980b9; }
+        .ld-flash     { background: #2c0f40; border: 1px solid #8e44ad; }
+        .ld-step      { background: #0f1f2e; border: 1px solid #566573; }
+        .ld-vuln      { background: #4a1000; border: 2px dashed #cb4335; }
+        .ld-fix       { background: #052e16; border: 2px dashed #27ae60; }
+        .ld-profit    { background: #3d2c00; border: 1px solid #d4ac0d; }
+
+        /* Security fixes table */
+        .fix-row td:first-child { color: var(--red); font-size: 0.85rem; }
+        .fix-row td:last-child  { color: var(--green); font-size: 0.85rem; }
+
+        /* Wide mermaid container */
+        #flow .mermaid {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        .mermaid svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Loss highlight */
+        .loss-amount {
+            color: var(--red);
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Blockchain Exploit Forensic Report</h1>
+        <h2>Euler Finance Exploit</h2>
+        <div class="meta">
+            <span class="date">📅 2023-03-13</span>
+            <span class="verdict verdict-verified">
+                VERIFIED
+            </span>
+            <span class="confidence">Confidence: 91.0%</span>
+        </div>
+    </header>
+
+    <section id="summary">
+        <h3>Executive Summary</h3>
+        <table>
+            <tr><td>Technique</td><td><strong>donation_attack</strong></td></tr>
+            <tr><td>Transaction</td><td><code>0xc310a0affe2169d1f6feec1c63dbc7f7c62a887fa48795d327d4d2da2d6b111d</code></td></tr>
+            <tr><td>Attacker</td><td><code>0xeBC29199C817Dc47BA12E3F86102564D640539d4</code></td></tr>
+            <tr>
+                <td>Estimated Loss</td>
+                <td class="loss-amount">$197,000,000</td>
+            </tr>
+            <tr><td>Chain</td><td>mainnet</td></tr>
+            <tr><td>Fork Block</td><td>16817995</td></tr>
+            <tr><td>Tags</td><td>flash_loan, donation, liquidation</td></tr>
+        </table>
+    </section>
+
+    <section id="flow">
+        <h3>Exploit Flow Diagram</h3>
+        <div class="mermaid">
+graph TD
+
+    classDef attacker fill:#6b0f1a,stroke:#e74c3c,color:#ffd6d6,font-weight:bold
+    classDef protocol fill:#0d2137,stroke:#2980b9,color:#aed6f1
+    classDef flash   fill:#2c0f40,stroke:#8e44ad,color:#dab8f3
+    classDef step    fill:#0f1f2e,stroke:#566573,color:#c8d6e5
+    classDef vuln    fill:#4a1000,stroke:#cb4335,color:#fad7a0,stroke-dasharray:6 3
+    classDef fix     fill:#052e16,stroke:#27ae60,color:#a9dfbf,stroke-dasharray:3 3
+    classDef profit  fill:#3d2c00,stroke:#d4ac0d,color:#fef9e7,font-weight:bold
+    classDef xfer    fill:#0a2618,stroke:#27ae60,color:#abebc6
+
+    ATTKR[&#34;🔴 Attacker&lt;br/&gt;0xeBC2..39d4&#34;]
+    PROTO0[&#34;🏛 Euler Protocol&lt;br/&gt;0x2718..25d3&#34;]
+    PROTO1[&#34;🏛 eDAI Token&lt;br/&gt;0xe025..0fDA&#34;]
+
+    S1[&#34;⚡ 1. Flash Loan Borrow&lt;br/&gt;30,000,000,000,000,000,000,000,000 wei&#34;]
+    S2[&#34;⚡ 2. Liquidation × 2&lt;br/&gt;⚠ self-liquidation / bonus drain&#34;]
+    S3[&#34;↩ 3. Flash Loan Repay&#34;]
+    PROFIT[&#34;💰 Profit Extracted&#34;]
+
+    V1[&#34;🚨 Self-liquidation not restricted — liquidator can equal borrower&#34;]
+    F1[&#34;🛡 Require liquidator != borrower; zero-out bonus for self-liquidations&#34;]
+    V2[&#34;🚨 Liquidation bonus can drain protocol reserves beyond actual loss&#34;]
+    F2[&#34;🛡 Cap bonus to min(bonus_rate * debt, available_reserve_balance)&#34;]
+    V3[&#34;🚨 Health / collateral factor not re-validated after flash-funded operations&#34;]
+    F3[&#34;🛡 Re-check health factor after every balance-altering call inside the loan&#34;]
+    V4[&#34;🚨 State written before balance/invariant check (checks-effects violated)&#34;]
+    F4[&#34;🛡 Apply checks-effects-interactions: validate invariants before state mutation&#34;]
+
+    %% Attack flow
+    ATTKR --&gt;|initiates| S1
+    S1 --&gt; S2
+    S2 --&gt; S3
+    S3 --&gt; PROFIT
+    S1 --&gt;|targets| PROTO0
+    S1 --&gt;|targets| PROTO1
+
+    %% Vulnerability links
+    V1 -.-&gt;|fix| F1
+    V2 -.-&gt;|fix| F2
+    V3 -.-&gt;|fix| F3
+    V4 -.-&gt;|fix| F4
+    S2 -.-&gt;|exposes| V1
+
+    %% Class assignments
+    class ATTKR attacker
+    class PROFIT profit
+    class PROTO0 protocol
+    class PROTO1 protocol
+    class S1 flash
+    class S2 vuln
+    class S3 flash
+    class V1 vuln
+    class F1 fix
+    class V2 vuln
+    class F2 fix
+    class V3 vuln
+    class F3 fix
+    class V4 vuln
+    class F4 fix
+        </div>
+
+        <div class="legend">
+            <span class="legend-item"><span class="legend-dot ld-attacker"></span>Attacker</span>
+            <span class="legend-item"><span class="legend-dot ld-protocol"></span>Protocol / Victim</span>
+            <span class="legend-item"><span class="legend-dot ld-flash"></span>Flash Loan</span>
+            <span class="legend-item"><span class="legend-dot ld-step"></span>Attack Step</span>
+            <span class="legend-item"><span class="legend-dot ld-vuln"></span>Vulnerability</span>
+            <span class="legend-item"><span class="legend-dot ld-fix"></span>Security Fix</span>
+            <span class="legend-item"><span class="legend-dot ld-profit"></span>Profit</span>
+        </div>
+    </section>
+
+    
+    <section id="security">
+        <h3>Security Vulnerabilities &amp; Recommended Fixes</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>🚨 Vulnerability</th>
+                    <th>🛡 Recommended Fix</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                <tr class="fix-row">
+                    <td>Health / collateral factor not re-validated after flash-funded operations</td>
+                    <td>Re-check health factor after every balance-altering call inside the loan</td>
+                </tr>
+                
+                <tr class="fix-row">
+                    <td>State written before balance/invariant check (checks-effects violated)</td>
+                    <td>Apply checks-effects-interactions: validate invariants before state mutation</td>
+                </tr>
+                
+                <tr class="fix-row">
+                    <td>Self-liquidation not restricted — liquidator can equal borrower</td>
+                    <td>Require liquidator != borrower; zero-out bonus for self-liquidations</td>
+                </tr>
+                
+                <tr class="fix-row">
+                    <td>Liquidation bonus can drain protocol reserves beyond actual loss</td>
+                    <td>Cap bonus to min(bonus_rate * debt, available_reserve_balance)</td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </section>
+    
+
+    <section id="predicates">
+        <h3>Predicate Results</h3>
+        <table>
+            <thead>
+                <tr><th>Predicate</th><th>Result</th><th>Details</th></tr>
+            </thead>
+            <tbody>
+                
+                <tr class="predicate-pass">
+                    <td>flash_loan_detected</td>
+                    <td>PASS</td>
+                    <td>Found 2 borrow(s) and 2 repay(s) from Aave v2</td>
+                </tr>
+                
+                <tr class="predicate-pass">
+                    <td>balance_increased</td>
+                    <td>PASS</td>
+                    <td>Attacker gained on 1 asset(s): DAI — net +197,000,000 DAI</td>
+                </tr>
+                
+                <tr class="predicate-pass">
+                    <td>balance_decreased</td>
+                    <td>PASS</td>
+                    <td>Euler reserves lost ~197M DAI across 7 change(s)</td>
+                </tr>
+                
+                <tr class="predicate-fail">
+                    <td>reentrancy_detected</td>
+                    <td>FAIL</td>
+                    <td>No nested re-entry detected; liquidation is synchronous</td>
+                </tr>
+                
+                <tr class="predicate-fail">
+                    <td>price_manipulation</td>
+                    <td>FAIL</td>
+                    <td>No oracle read sandwiched between DEX swaps</td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </section>
+
+    <section id="actions">
+        <h3>Semantic Action Trace</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Type</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Depth</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                <tr>
+                    <td style="color:var(--text-muted)">1</td>
+                    <td>flash_loan_borrow</td>
+                    <td><code>0xeBC29199C817Dc47BA12E3F86102564D640539d4</code></td>
+                    <td><code>0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9</code></td>
+                    <td>1</td>
+                </tr>
+                
+                <tr>
+                    <td style="color:var(--text-muted)">2</td>
+                    <td>token_transfer</td>
+                    <td><code>0xeBC29199C817Dc47BA12E3F86102564D640539d4</code></td>
+                    <td><code>0x27182842E098f60e3D576794A5bFFb0777E025d3</code></td>
+                    <td>2</td>
+                </tr>
+                
+                <tr>
+                    <td style="color:var(--text-muted)">3</td>
+                    <td>storage_write</td>
+                    <td><code>0x27182842E098f60e3D576794A5bFFb0777E025d3</code></td>
+                    <td><code>0x27182842E098f60e3D576794A5bFFb0777E025d3</code></td>
+                    <td>3</td>
+                </tr>
+                
+                <tr>
+                    <td style="color:var(--text-muted)">4</td>
+                    <td>storage_write</td>
+                    <td><code>0x27182842E098f60e3D576794A5bFFb0777E025d3</code></td>
+                    <td><code>0x27182842E098f60e3D576794A5bFFb0777E025d3</code></td>
+                    <td>1</td>
+                </tr>
+                
+                <tr>
+                    <td style="color:var(--text-muted)">5</td>
+                    <td>token_transfer</td>
+                    <td><code>0x27182842E098f60e3D576794A5bFFb0777E025d3</code></td>
+                    <td><code>0xeBC29199C817Dc47BA12E3F86102564D640539d4</code></td>
+                    <td>2</td>
+                </tr>
+                
+                <tr>
+                    <td style="color:var(--text-muted)">6</td>
+                    <td>storage_write</td>
+                    <td><code>0xeBC29199C817Dc47BA12E3F86102564D640539d4</code></td>
+                    <td><code>0x27182842E098f60e3D576794A5bFFb0777E025d3</code></td>
+                    <td>3</td>
+                </tr>
+                
+                <tr>
+                    <td style="color:var(--text-muted)">7</td>
+                    <td>liquidation</td>
+                    <td><code>0xA56Ec6F53cF0e964c5c06F1AA7FFF15B5C49dAae</code></td>
+                    <td><code>0x27182842E098f60e3D576794A5bFFb0777E025d3</code></td>
+                    <td>1</td>
+                </tr>
+                
+                <tr>
+                    <td style="color:var(--text-muted)">8</td>
+                    <td>token_transfer</td>
+                    <td><code>0x27182842E098f60e3D576794A5bFFb0777E025d3</code></td>
+                    <td><code>0xA56Ec6F53cF0e964c5c06F1AA7FFF15B5C49dAae</code></td>
+                    <td>2</td>
+                </tr>
+                
+                <tr>
+                    <td style="color:var(--text-muted)">9</td>
+                    <td>flash_loan_borrow</td>
+                    <td><code>0xA56Ec6F53cF0e964c5c06F1AA7FFF15B5C49dAae</code></td>
+                    <td><code>0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9</code></td>
+                    <td>3</td>
+                </tr>
+                
+                <tr>
+                    <td style="color:var(--text-muted)">10</td>
+                    <td>liquidation</td>
+                    <td><code>0xA56Ec6F53cF0e964c5c06F1AA7FFF15B5C49dAae</code></td>
+                    <td><code>0x27182842E098f60e3D576794A5bFFb0777E025d3</code></td>
+                    <td>1</td>
+                </tr>
+                
+                <tr>
+                    <td style="color:var(--text-muted)">11</td>
+                    <td>token_transfer</td>
+                    <td><code>0x27182842E098f60e3D576794A5bFFb0777E025d3</code></td>
+                    <td><code>0xeBC29199C817Dc47BA12E3F86102564D640539d4</code></td>
+                    <td>2</td>
+                </tr>
+                
+                <tr>
+                    <td style="color:var(--text-muted)">12</td>
+                    <td>flash_loan_repay</td>
+                    <td><code>0xeBC29199C817Dc47BA12E3F86102564D640539d4</code></td>
+                    <td><code>0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9</code></td>
+                    <td>3</td>
+                </tr>
+                
+                <tr>
+                    <td style="color:var(--text-muted)">13</td>
+                    <td>flash_loan_repay</td>
+                    <td><code>0xA56Ec6F53cF0e964c5c06F1AA7FFF15B5C49dAae</code></td>
+                    <td><code>0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9</code></td>
+                    <td>1</td>
+                </tr>
+                
+                <tr>
+                    <td style="color:var(--text-muted)">14</td>
+                    <td>token_transfer</td>
+                    <td><code>0xeBC29199C817Dc47BA12E3F86102564D640539d4</code></td>
+                    <td><code>0x0000dead</code></td>
+                    <td>2</td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </section>
+
+    
+
+    <section id="reasoning">
+        <h3>Analysis</h3>
+        <p>5 predicates evaluated: 3 PASS, 2 FAIL. The flash loan borrow+repay pair is confirmed, attacker balance increased by ~$197M DAI, and Euler reserves were drained. The self-liquidation (liquidation_6) combined with the donateToReserves storage write (storage_write_5) is the causal chain. No reentrancy or oracle manipulation observed — the root cause is a missing health-factor guard in the donate pathway and unrestricted self-liquidation.</p>
+    </section>
+
+    <footer>
+        <p>Generated by Chain Forensics &mdash; 2023-03-13</p>
+    </footer>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            flowchart: {
+                curve: 'basis',
+                padding: 20,
+                nodeSpacing: 50,
+                rankSpacing: 60,
+            },
+            themeVariables: {
+                darkMode: true,
+                background: '#0d1117',
+                primaryColor: '#1c2833',
+                primaryTextColor: '#c9d1d9',
+                primaryBorderColor: '#30363d',
+                lineColor: '#58a6ff',
+                secondaryColor: '#161b22',
+                tertiaryColor: '#0d1117',
+            },
+        });
+    </script>
+</body>
+</html>

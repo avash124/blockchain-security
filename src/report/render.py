@@ -22,6 +22,7 @@ class ReportRenderer:
         mermaid_diagram: str,
         scenario_config: dict[str, Any],
         output_path: Path,
+        security_fixes: list[dict[str, str]] | None = None,
     ) -> Path:
         """Render the report and write to disk."""
         try:
@@ -41,6 +42,7 @@ class ReportRenderer:
             mermaid=mermaid_diagram,
             actions=ir_graph.to_dict()["actions"],
             edges=ir_graph.to_dict()["edges"],
+            security_fixes=security_fixes or [],
         )
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
