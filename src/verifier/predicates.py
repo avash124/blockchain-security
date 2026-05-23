@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -44,6 +45,8 @@ class PredicateEngine:
             self.check_flash_loan_detected,
             self.check_reentrancy_detected,
             self.check_selfdestruct_called,
+            self.check_price_manipulation,
+            self.check_delegatecall_to_created,
         ]
         for check_fn in checks:
             result = check_fn(ir_graph, state_diff, scenario_config)
@@ -58,15 +61,64 @@ class PredicateEngine:
         attacker = config.get("attacker_address")
         if not attacker:
             return None
-        # TODO: compare pre/post balances from state_diff
-        raise NotImplementedError
+        gains = state_diff.get_gains(attacker)
+        if gains:
+            return PredicateCheck(
+                name="balance_increased",
+                result=PredicateResult.PASS,
+                details=f"Attacker gained on {len(gains)} asset(s): {', '.join(g.token for g in gains)}",
+                evidence={
+                    "attacker": attacker,
+                    "gains": [
+                        {
+                            "token": g.token,
+                            "delta": str(g.delta),
+                            "before": str(g.before),
+                            "after": str(g.after),
+                        }
+                        for g in gains
+                    ],
+                    "total_profit_wei": str(state_diff.total_profit(attacker)),
+                },
+            )
+        return PredicateCheck(
+            name="balance_increased",
+            result=PredicateResult.FAIL,
+            details=f"No balance increase for attacker {attacker}",
+            evidence={"attacker": attacker},
+        )
 
     def check_balance_decreased(
         self, ir_graph: IRGraph, state_diff: StateDiff, config: dict[str, Any]
     ) -> PredicateCheck | None:
         """Check if the victim protocol's balance decreased."""
-        # TODO: compare pre/post balances for target contracts
-        raise NotImplementedError
+        victims: list[str] = list(config.get("victim_addresses", []))
+        target = config.get("target_contract")
+        if target and target not in victims:
+            victims.insert(0, target)
+        if not victims:
+            return None
+        losses = [loss for addr in victims for loss in state_diff.get_losses(addr)]
+        if losses:
+            total_lost = sum(abs(l.delta) for l in losses)
+            return PredicateCheck(
+                name="balance_decreased",
+                result=PredicateResult.PASS,
+                details=f"Victim(s) lost funds: {len(losses)} change(s), {total_lost} wei total",
+                evidence={
+                    "losses": [
+                        {"address": l.address, "token": l.token, "delta": str(l.delta)}
+                        for l in losses
+                    ],
+                    "total_lost_wei": str(total_lost),
+                },
+            )
+        return PredicateCheck(
+            name="balance_decreased",
+            result=PredicateResult.FAIL,
+            details="No balance decrease for victim addresses",
+            evidence={"victims_checked": victims},
+        )
 
     def check_flash_loan_detected(
         self, ir_graph: IRGraph, state_diff: StateDiff, config: dict[str, Any]
@@ -91,9 +143,38 @@ class PredicateEngine:
     def check_reentrancy_detected(
         self, ir_graph: IRGraph, state_diff: StateDiff, config: dict[str, Any]
     ) -> PredicateCheck | None:
-        """Check if reentrancy patterns exist in the trace."""
-        # TODO: look for nested calls to the same contract at increasing depth
-        raise NotImplementedError
+        """Check if reentrancy patterns exist in the trace.
+
+        Reentrancy signature: the same contract address appears as `to_addr` at two
+        different call depths where the deeper call is at least 2 levels below the
+        shallower one, meaning a call *out of* that contract looped back into it.
+        """
+        depths_per_target: dict[str, list[int]] = defaultdict(list)
+        for action in ir_graph.actions:
+            if action.to_addr:
+                depths_per_target[action.to_addr].append(action.depth)
+
+        reentrant = [
+            {"address": addr, "min_depth": min(ds), "max_depth": max(ds)}
+            for addr, ds in depths_per_target.items()
+            if len(set(ds)) >= 2 and max(ds) - min(ds) >= 2
+        ]
+
+        if reentrant:
+            preview = ", ".join(r["address"][:10] for r in reentrant[:3])
+            return PredicateCheck(
+                name="reentrancy_detected",
+                result=PredicateResult.PASS,
+                details=f"Nested re-entry into {len(reentrant)} contract(s): {preview}",
+                evidence={"reentrant_contracts": reentrant},
+            )
+        if "reentrancy" in config.get("tags", []):
+            return PredicateCheck(
+                name="reentrancy_detected",
+                result=PredicateResult.FAIL,
+                details="Expected reentrancy but no nested calls at increasing depth detected",
+            )
+        return None
 
     def check_selfdestruct_called(
         self, ir_graph: IRGraph, state_diff: StateDiff, config: dict[str, Any]
@@ -105,5 +186,57 @@ class PredicateEngine:
                 name="selfdestruct_called",
                 result=PredicateResult.PASS,
                 details=f"SELFDESTRUCT found at depth {selfdestructs[0].depth}",
+            )
+        return None
+
+    def check_price_manipulation(
+        self, ir_graph: IRGraph, state_diff: StateDiff, config: dict[str, Any]
+    ) -> PredicateCheck | None:
+        """Check if an oracle read is sandwiched between DEX swaps (price manipulation signal)."""
+        swaps = ir_graph.get_actions_by_type(ActionType.DEX_SWAP)
+        oracle_reads = ir_graph.get_actions_by_type(ActionType.ORACLE_READ)
+        if not swaps or not oracle_reads:
+            return None
+
+        swap_indices = {a.trace_index_start for a in swaps}
+        for oracle in oracle_reads:
+            oi = oracle.trace_index_start
+            if any(si < oi for si in swap_indices) and any(si > oi for si in swap_indices):
+                return PredicateCheck(
+                    name="price_manipulation",
+                    result=PredicateResult.PASS,
+                    details=f"Oracle read at index {oi} sandwiched between {len(swaps)} DEX swap(s)",
+                    evidence={
+                        "swap_count": len(swaps),
+                        "oracle_read_count": len(oracle_reads),
+                        "sandwiched_oracle_index": oi,
+                    },
+                )
+        return None
+
+    def check_delegatecall_to_created(
+        self, ir_graph: IRGraph, state_diff: StateDiff, config: dict[str, Any]
+    ) -> PredicateCheck | None:
+        """Check if a DELEGATECALL targets a contract deployed within the same transaction."""
+        delegate_calls = ir_graph.get_actions_by_type(ActionType.DELEGATE_CALL)
+        if not delegate_calls:
+            return None
+
+        # Build the set of contracts created in-tx from both the state diff and IR
+        created: set[str] = {c.lower() for c in state_diff.created_contracts}
+        for dep in ir_graph.get_actions_by_type(ActionType.CONTRACT_DEPLOYMENT):
+            if dep.to_addr:
+                created.add(dep.to_addr.lower())
+
+        if not created:
+            return None
+
+        suspicious = [dc for dc in delegate_calls if dc.to_addr.lower() in created]
+        if suspicious:
+            return PredicateCheck(
+                name="delegatecall_to_created",
+                result=PredicateResult.PASS,
+                details=f"DELEGATECALL into {len(suspicious)} in-transaction deployed contract(s)",
+                evidence={"targets": [dc.to_addr for dc in suspicious]},
             )
         return None
