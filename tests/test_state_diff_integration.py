@@ -23,7 +23,6 @@ DAI = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
 
 # Anvil default prefunded accounts (10000 ETH each)
 SENDER = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
-SENDER_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 RECEIVER = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
 
 needs_rpc = pytest.mark.skipif(not MAINNET_RPC, reason="MAINNET_RPC_URL not set")

@@ -6,13 +6,62 @@
     <title>Forensic Report: {{ scenario.name }}</title>
     <link rel="stylesheet" href="assets/style.css">
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        /* Diagram legend */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+        .ld-attacker { background: #6b0f1a; border: 1px solid #e74c3c; }
+        .ld-protocol  { background: #0d2137; border: 1px solid #2980b9; }
+        .ld-flash     { background: #2c0f40; border: 1px solid #8e44ad; }
+        .ld-step      { background: #0f1f2e; border: 1px solid #566573; }
+        .ld-vuln      { background: #4a1000; border: 2px dashed #cb4335; }
+        .ld-fix       { background: #052e16; border: 2px dashed #27ae60; }
+        .ld-profit    { background: #3d2c00; border: 1px solid #d4ac0d; }
+
+        /* Security fixes table */
+        .fix-row td:first-child { color: var(--red); font-size: 0.85rem; }
+        .fix-row td:last-child  { color: var(--green); font-size: 0.85rem; }
+
+        /* Wide mermaid container */
+        #flow .mermaid {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        .mermaid svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Loss highlight */
+        .loss-amount {
+            color: var(--red);
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+    </style>
 </head>
 <body>
     <header>
         <h1>Blockchain Exploit Forensic Report</h1>
         <h2>{{ scenario.name }}</h2>
         <div class="meta">
-            <span class="date">Date: {{ scenario.date }}</span>
+            <span class="date">📅 {{ scenario.date }}</span>
             <span class="verdict verdict-{{ verdict.verdict | lower }}">
                 {{ verdict.verdict }}
             </span>
@@ -23,46 +72,57 @@
     <section id="summary">
         <h3>Executive Summary</h3>
         <table>
-            <tr><td>Technique</td><td>{{ verdict.technique }}</td></tr>
+            <tr><td>Technique</td><td><strong>{{ verdict.technique }}</strong></td></tr>
             <tr><td>Transaction</td><td><code>{{ scenario.tx_hash }}</code></td></tr>
             <tr><td>Attacker</td><td><code>{{ scenario.attacker_address }}</code></td></tr>
-            <tr><td>Estimated Loss</td><td>${{ scenario.estimated_loss_usd | default("N/A") }}</td></tr>
+            <tr>
+                <td>Estimated Loss</td>
+                <td class="loss-amount">${{ "{:,}".format(scenario.estimated_loss_usd | int) if scenario.estimated_loss_usd else "N/A" }}</td>
+            </tr>
+            <tr><td>Chain</td><td>{{ scenario.chain | default("mainnet") }}</td></tr>
             <tr><td>Fork Block</td><td>{{ scenario.fork_block }}</td></tr>
+            <tr><td>Tags</td><td>{{ scenario.tags | join(", ") if scenario.tags else "—" }}</td></tr>
         </table>
     </section>
 
     <section id="flow">
-        <h3>Exploit Flow</h3>
+        <h3>Exploit Flow Diagram</h3>
         <div class="mermaid">
-            {{ mermaid }}
+{{ mermaid }}
+        </div>
+
+        <div class="legend">
+            <span class="legend-item"><span class="legend-dot ld-attacker"></span>Attacker</span>
+            <span class="legend-item"><span class="legend-dot ld-protocol"></span>Protocol / Victim</span>
+            <span class="legend-item"><span class="legend-dot ld-flash"></span>Flash Loan</span>
+            <span class="legend-item"><span class="legend-dot ld-step"></span>Attack Step</span>
+            <span class="legend-item"><span class="legend-dot ld-vuln"></span>Vulnerability</span>
+            <span class="legend-item"><span class="legend-dot ld-fix"></span>Security Fix</span>
+            <span class="legend-item"><span class="legend-dot ld-profit"></span>Profit</span>
         </div>
     </section>
 
-    <section id="actions">
-        <h3>Semantic Actions</h3>
+    {% if security_fixes %}
+    <section id="security">
+        <h3>Security Vulnerabilities &amp; Recommended Fixes</h3>
         <table>
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Type</th>
-                    <th>From</th>
-                    <th>To</th>
-                    <th>Depth</th>
+                    <th>🚨 Vulnerability</th>
+                    <th>🛡 Recommended Fix</th>
                 </tr>
             </thead>
             <tbody>
-                {% for action in actions %}
-                <tr>
-                    <td>{{ action.id }}</td>
-                    <td>{{ action.type }}</td>
-                    <td><code>{{ action.from }}</code></td>
-                    <td><code>{{ action.to }}</code></td>
-                    <td>{{ action.depth }}</td>
+                {% for item in security_fixes %}
+                <tr class="fix-row">
+                    <td>{{ item.vuln }}</td>
+                    <td>{{ item.fix }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </section>
+    {% endif %}
 
     <section id="predicates">
         <h3>Predicate Results</h3>
@@ -77,11 +137,42 @@
                     <td>{{ p.result }}</td>
                     <td>{{ p.details }}</td>
                 </tr>
+                {% else %}
+                <tr><td colspan="3" style="color:var(--text-muted)">No predicates evaluated</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </section>
 
+    <section id="actions">
+        <h3>Semantic Action Trace</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Type</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Depth</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for action in actions %}
+                <tr>
+                    <td style="color:var(--text-muted)">{{ loop.index }}</td>
+                    <td>{{ action.type }}</td>
+                    <td><code>{{ action.from }}</code></td>
+                    <td><code>{{ action.to }}</code></td>
+                    <td>{{ action.depth }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="color:var(--text-muted)">No actions in IR graph</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    {% if verdict.ablations %}
     <section id="ablation">
         <h3>Ablation Results</h3>
         <table>
@@ -99,6 +190,7 @@
             </tbody>
         </table>
     </section>
+    {% endif %}
 
     <section id="reasoning">
         <h3>Analysis</h3>
@@ -106,9 +198,30 @@
     </section>
 
     <footer>
-        <p>Generated by Chain Forensics</p>
+        <p>Generated by Chain Forensics &mdash; {{ scenario.date }}</p>
     </footer>
 
-    <script>mermaid.initialize({startOnLoad: true, theme: 'dark'});</script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            flowchart: {
+                curve: 'basis',
+                padding: 20,
+                nodeSpacing: 50,
+                rankSpacing: 60,
+            },
+            themeVariables: {
+                darkMode: true,
+                background: '#0d1117',
+                primaryColor: '#1c2833',
+                primaryTextColor: '#c9d1d9',
+                primaryBorderColor: '#30363d',
+                lineColor: '#58a6ff',
+                secondaryColor: '#161b22',
+                tertiaryColor: '#0d1117',
+            },
+        });
+    </script>
 </body>
 </html>

@@ -3,3 +3,9 @@ Claude
 Claude.md
 SKILL.md
 .env.example
+.claude
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
