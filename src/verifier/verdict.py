@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any
 
 from src.agents.classifier import ClassificationResult
-from src.verifier.causal import AblationResult
+from src.verifier.causal import AblationOutcome, AblationResult
 from src.verifier.predicates import PredicateCheck, PredicateResult
 
 
@@ -50,6 +50,19 @@ class VerdictEngine:
     CONFIDENCE_THRESHOLDS = {
         Verdict.VERIFIED: 0.8,
         Verdict.REFUTED: 0.2,
+    }
+
+    # How strongly each ablation outcome supports the causal hypothesis.
+    # REVERTED/NO_PROFIT: removing the factor broke the exploit → strong evidence.
+    # REDUCED_PROFIT: factor contributed but wasn't sole cause.
+    # UNCHANGED: factor was irrelevant → evidence against the hypothesis.
+    # ERROR: unknown → neutral.
+    _ABLATION_OUTCOME_SCORES: dict[AblationOutcome, float] = {
+        AblationOutcome.REVERTED: 1.0,
+        AblationOutcome.NO_PROFIT: 0.9,
+        AblationOutcome.REDUCED_PROFIT: 0.6,
+        AblationOutcome.UNCHANGED: 0.1,
+        AblationOutcome.ERROR: 0.5,
     }
 
     def evaluate(
@@ -96,8 +109,12 @@ class VerdictEngine:
 
         predicate_score = passing / total if total > 0 else 0.5
 
-        # TODO: factor in ablation results (each successful ablation adds confidence)
-        ablation_score = 0.5  # placeholder
+        if ablations:
+            ablation_score = sum(
+                self._ABLATION_OUTCOME_SCORES.get(a.outcome, 0.5) for a in ablations
+            ) / len(ablations)
+        else:
+            ablation_score = 0.5
 
         return 0.6 * predicate_score + 0.4 * ablation_score
 
@@ -109,5 +126,39 @@ class VerdictEngine:
         verdict: Verdict,
     ) -> str:
         """Generate human-readable reasoning for the verdict."""
-        # TODO: synthesize evidence into a clear explanation
-        return f"Verdict {verdict.value} based on {len(predicates)} predicates and {len(ablations)} ablation tests."
+        technique = classification.primary_hypothesis.technique
+        llm_conf = classification.primary_hypothesis.confidence
+
+        pass_count = sum(1 for p in predicates if p.result == PredicateResult.PASS)
+        fail_count = sum(1 for p in predicates if p.result == PredicateResult.FAIL)
+        skip_count = sum(1 for p in predicates if p.result == PredicateResult.SKIP)
+
+        lines = [
+            f"Verdict: {verdict.value} for technique '{technique}' (LLM confidence {llm_conf:.0%}).",
+            f"Evaluated {len(predicates)} predicates: {pass_count} passed, {fail_count} failed, {skip_count} skipped.",
+        ]
+
+        if pass_count:
+            names = [p.name for p in predicates if p.result == PredicateResult.PASS]
+            lines.append(f"  Confirmed: {', '.join(names)}.")
+        if fail_count:
+            names = [p.name for p in predicates if p.result == PredicateResult.FAIL]
+            lines.append(f"  Failed: {', '.join(names)}.")
+
+        if ablations:
+            summary = "; ".join(f"{a.factor_removed} -> {a.outcome.value}" for a in ablations)
+            lines.append(f"Ran {len(ablations)} ablation test(s): {summary}.")
+            causal = [a for a in ablations if a.outcome in (AblationOutcome.REVERTED, AblationOutcome.NO_PROFIT)]
+            non_causal = [a for a in ablations if a.outcome == AblationOutcome.UNCHANGED]
+            if causal:
+                lines.append(f"  Causal factors confirmed: {', '.join(a.factor_removed for a in causal)}.")
+            if non_causal:
+                lines.append(f"  Non-causal factors: {', '.join(a.factor_removed for a in non_causal)}.")
+        else:
+            lines.append("No ablation tests were run.")
+
+        if classification.alternative_hypotheses:
+            alts = [h.technique for h in classification.alternative_hypotheses[:2]]
+            lines.append(f"Alternative hypotheses considered: {', '.join(alts)}.")
+
+        return "\n".join(lines)
