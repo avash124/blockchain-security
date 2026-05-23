@@ -18,11 +18,12 @@ class IRLifter:
     def lift(self, trace: TransactionTrace) -> IRGraph:
         """Transform a full transaction trace into an IR graph."""
         graph = IRGraph(tx_hash=trace.tx_hash)
+        tx_from = trace.from_addr
 
         i = 0
         while i < len(trace.frames):
             frame = trace.frames[i]
-            match_result = self._matcher.match(frame, trace.frames, i)
+            match_result = self._matcher.match(frame, trace.frames, i, tx_from=tx_from)
 
             if match_result:
                 action, consumed = match_result
