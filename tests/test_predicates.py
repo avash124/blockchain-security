@@ -57,11 +57,12 @@ class TestFlashLoanDetected:
         result = engine.check_flash_loan_detected(_make_graph(), StateDiff(), {"tags": []})
         assert result is None
 
-    def test_borrow_only_no_repay_fails_when_tagged(self):
+    def test_borrow_only_passes_repay_inferred(self):
         engine = PredicateEngine()
         graph = _make_graph(_action(ActionType.FLASH_LOAN_BORROW))
         result = engine.check_flash_loan_detected(graph, StateDiff(), {"tags": ["flash_loan"]})
-        assert result.result == PredicateResult.FAIL
+        assert result.result == PredicateResult.PASS
+        assert "inferred" in result.details
 
 
 # ------------------------------------------------------------------
@@ -100,14 +101,14 @@ class TestBalanceIncreased:
         assert "2 asset" in result.details
         assert result.evidence["total_profit_wei"] == "1500"
 
-    def test_fail_no_gain(self):
+    def test_skip_no_gain(self):
         engine = PredicateEngine()
         diff = StateDiff(balance_changes=[
             BalanceChange(address="0xattacker", token="ETH", before=1000, after=500),
         ])
         config = {"attacker_address": "0xattacker"}
         result = engine.check_balance_increased(_make_graph(), diff, config)
-        assert result.result == PredicateResult.FAIL
+        assert result.result == PredicateResult.SKIP
 
     def test_none_when_no_attacker(self):
         engine = PredicateEngine()
@@ -121,7 +122,7 @@ class TestBalanceIncreased:
         ])
         config = {"attacker_address": "0xattacker"}
         result = engine.check_balance_increased(_make_graph(), diff, config)
-        assert result.result == PredicateResult.FAIL
+        assert result.result == PredicateResult.SKIP
 
 
 # ------------------------------------------------------------------

@@ -18,6 +18,8 @@ class IRLifter:
     def lift(self, trace: TransactionTrace) -> IRGraph:
         """Transform a full transaction trace into an IR graph."""
         graph = IRGraph(tx_hash=trace.tx_hash)
+        graph.metadata["tx_from"] = trace.from_addr
+        graph.metadata["tx_to"] = trace.to_addr
         tx_from = trace.from_addr
 
         i = 0
