@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-import httpx
+from src.acquisition.rpc_client import RpcClient, RpcError
 
 logger = logging.getLogger(__name__)
 
@@ -83,12 +83,10 @@ class StateDiff:
 class StateDiffComputer:
     """Snapshots chain state before and after a transaction to compute diffs."""
 
-    _RPC_TIMEOUT = 30.0
-    # ERC-20 balanceOf(address) selector
     _BALANCE_OF_SELECTOR = "0x70a08231"
 
     def __init__(self, rpc_url: str):
-        self._rpc_url = rpc_url
+        self._rpc = RpcClient(rpc_url, timeout=30.0)
 
     def compute(
         self,
@@ -214,34 +212,11 @@ class StateDiffComputer:
         return created, destroyed
 
     def _rpc_call(self, method: str, params: list[Any]) -> Any:
-        """Send a JSON-RPC 2.0 request and return the 'result' field."""
-        payload = {
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": method,
-            "params": params,
-        }
+        """Delegate to shared RPC client, wrapping errors."""
         try:
-            response = httpx.post(self._rpc_url, json=payload, timeout=self._RPC_TIMEOUT)
-            response.raise_for_status()
-        except httpx.TimeoutException as exc:
-            raise StateDiffError(f"RPC timeout for {method}: {exc}") from exc
-        except httpx.HTTPStatusError as exc:
-            raise StateDiffError(
-                f"RPC HTTP error for {method}: {exc.response.status_code}"
-            ) from exc
-        except httpx.RequestError as exc:
-            raise StateDiffError(f"RPC connection error for {method}: {exc}") from exc
-
-        body = response.json()
-        if "error" in body:
-            err = body["error"]
-            code = err.get("code", "?")
-            message = err.get("message", str(err))
-            raise StateDiffError(f"RPC error in {method} (code {code}): {message}")
-        if "result" not in body:
-            raise StateDiffError(f"RPC response for {method} missing 'result' field")
-        return body["result"]
+            return self._rpc.call(method, params)
+        except RpcError as exc:
+            raise StateDiffError(str(exc)) from exc
 
 
 def _to_hex(value: int) -> str:

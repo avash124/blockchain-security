@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections import Counter
+from pathlib import Path
 from typing import Any
 
 from src.ir.nodes import ActionType, IRGraph, SemanticAction
@@ -338,6 +340,75 @@ class IRVisualizer:
                         seen.add(vuln)
                         results.append({"vuln": vuln, "fix": fix})
         return results
+
+    def export_to_markdown(
+        self,
+        graph: IRGraph,
+        output_dir: str | Path = "docs",
+        scenario_config: dict[str, Any] | None = None,
+        frame_count: int | None = None,
+    ) -> Path:
+        """Generate all diagrams and write them to a markdown file in output_dir."""
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        tx_short = graph.tx_hash[:10] + "..." + graph.tx_hash[-4:] if len(graph.tx_hash) > 16 else graph.tx_hash
+        safe_name = graph.tx_hash[:16].replace("0x", "").lower()
+        out_path = output_dir / f"diagram_{safe_name}.md"
+
+        forensic = self.to_forensic_flowchart(graph, scenario_config)
+        flowchart = self.to_mermaid_flowchart(graph)
+        sequence = self.to_mermaid_sequence(graph)
+        fixes = self.extract_security_fixes(graph)
+
+        action_counts = Counter(a.action_type.value for a in graph.actions)
+
+        lines = [
+            f"# Forensic Diagram — `{tx_short}`\n",
+            f"- **Transaction:** `{graph.tx_hash}`",
+        ]
+        if scenario_config:
+            if scenario_config.get("attacker_address"):
+                lines.append(f"- **Attacker:** `{scenario_config['attacker_address']}`")
+            for t in scenario_config.get("target_contracts", []):
+                lines.append(f"- **Target:** {t.get('name', '')} `{t.get('address', '')}`")
+        if frame_count is not None:
+            lines.append(f"- **EVM Frames:** {frame_count:,}")
+        lines.append(f"- **Semantic Actions:** {len(graph.actions)}")
+        lines.append(f"- **Edges:** {len(graph.edges)}\n")
+
+        lines.append("### Action Breakdown\n")
+        lines.append("| Type | Count |")
+        lines.append("|------|-------|")
+        for atype, count in action_counts.most_common():
+            lines.append(f"| {atype} | {count} |")
+        lines.append("")
+
+        lines.append("## Forensic Flowchart\n")
+        lines.append("```mermaid")
+        lines.append(forensic)
+        lines.append("```\n")
+
+        lines.append("## Flowchart\n")
+        lines.append("```mermaid")
+        lines.append(flowchart)
+        lines.append("```\n")
+
+        lines.append("## Sequence Diagram\n")
+        lines.append("```mermaid")
+        lines.append(sequence)
+        lines.append("```\n")
+
+        if fixes:
+            lines.append("## Security Findings\n")
+            lines.append("| Vulnerability | Recommended Fix |")
+            lines.append("|--------------|-----------------|")
+            for f in fixes:
+                lines.append(f"| {f['vuln']} | {f['fix']} |")
+            lines.append("")
+
+        out_path.write_text("\n".join(lines))
+        return out_path
 
     def _action_label(self, action: SemanticAction) -> str:
         icon = _ACTION_ICONS.get(action.action_type, "")
