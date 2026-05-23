@@ -1,0 +1,20 @@
+scenario: nomad
+name: "Nomad Bridge Exploit"
+date: "2022-08-01"
+
+chain: mainnet
+tx_hash: "0xa5fe9d044e4f3e5aa5bc4c0709333cd2190cba0f4e7f16bcf73f49f83e4813d5"
+fork_block: 15259100
+attacker_address: "0xB5C55f76f90Cc528B2609109Ca14d8d84b9dFC35"
+
+target_contracts:
+  - name: "Nomad Replica"
+    address: "0xB92336759618F55bd0F8313bd843604592E27bd8"
+
+exploit_technique: "improper_initialization"
+estimated_loss_usd: 190_000_000
+
+tags:
+  - bridge
+  - initialization_bug
+  - message_replay

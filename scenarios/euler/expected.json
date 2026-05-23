@@ -1,0 +1,33 @@
+{
+  "scenario": "euler",
+  "verdict": "VERIFIED",
+  "technique": "donation_attack",
+  "confidence": 0.95,
+  "causal_factors": [
+    {
+      "factor": "flash_loan_acquisition",
+      "token": "DAI",
+      "amount": "30000000000000000000000000",
+      "verified": true
+    },
+    {
+      "factor": "donation_to_reserves",
+      "description": "Attacker donates borrowed tokens to eToken reserves, inflating exchange rate",
+      "verified": true
+    },
+    {
+      "factor": "self_liquidation",
+      "description": "Attacker triggers liquidation on own undercollateralized position at inflated rate",
+      "verified": true
+    }
+  ],
+  "state_diff": {
+    "attacker_profit_eth": 8876.15,
+    "protocol_loss_usd": 197000000
+  },
+  "ablation_results": {
+    "without_flash_loan": "REVERTED",
+    "without_donation": "NO_PROFIT",
+    "without_liquidation": "NO_PROFIT"
+  }
+}

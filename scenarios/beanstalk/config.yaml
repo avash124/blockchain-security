@@ -1,0 +1,20 @@
+scenario: beanstalk
+name: "Beanstalk Governance Exploit"
+date: "2022-04-17"
+
+chain: mainnet
+tx_hash: "0xcd314668aaa9bbfebaf1a0bd2b6553d01dd58899c508d4729fa7311dc5d33ad7"
+fork_block: 14595905
+attacker_address: "0x1c5dCdd006EA78a7E4783f9e6021C32935a10fb4"
+
+target_contracts:
+  - name: "Beanstalk Diamond"
+    address: "0xC1E088fC1323b20BCBee9bd1B9fC9546d5564493"
+
+exploit_technique: "governance_manipulation"
+estimated_loss_usd: 182_000_000
+
+tags:
+  - flash_loan
+  - governance
+  - bip_exploit

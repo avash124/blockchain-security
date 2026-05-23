@@ -1,0 +1,114 @@
+patterns:
+  # Token transfers
+  erc20_transfer:
+    opcodes: [CALL]
+    selector: "0xa9059cbb"  # transfer(address,uint256)
+    semantic_action: token_transfer
+    extract:
+      - name: recipient
+        source: calldata
+        offset: 4
+        length: 32
+      - name: amount
+        source: calldata
+        offset: 36
+        length: 32
+
+  erc20_transfer_from:
+    opcodes: [CALL]
+    selector: "0x23b872dd"  # transferFrom(address,address,uint256)
+    semantic_action: token_transfer
+    extract:
+      - name: from
+        source: calldata
+        offset: 4
+        length: 32
+      - name: to
+        source: calldata
+        offset: 36
+        length: 32
+      - name: amount
+        source: calldata
+        offset: 68
+        length: 32
+
+  # Flash loans
+  aave_flash_loan:
+    opcodes: [CALL]
+    selector: "0xab9c4b5d"  # flashLoan(...)
+    semantic_action: flash_loan_borrow
+    extract:
+      - name: receiver
+        source: calldata
+        offset: 4
+        length: 32
+
+  # DEX swaps
+  uniswap_v2_swap:
+    opcodes: [CALL]
+    selector: "0x022c0d9f"  # swap(uint256,uint256,address,bytes)
+    semantic_action: dex_swap
+    extract:
+      - name: amount0Out
+        source: calldata
+        offset: 4
+        length: 32
+      - name: amount1Out
+        source: calldata
+        offset: 36
+        length: 32
+
+  uniswap_v3_swap:
+    opcodes: [CALL]
+    selector: "0x128acb08"  # swap(address,bool,int256,uint160,bytes)
+    semantic_action: dex_swap
+
+  # Dangerous operations
+  selfdestruct:
+    opcodes: [SELFDESTRUCT]
+    semantic_action: self_destruct
+
+  delegatecall:
+    opcodes: [DELEGATECALL]
+    semantic_action: delegate_call
+    extract:
+      - name: target
+        source: stack
+        offset: 1
+
+  create2:
+    opcodes: [CREATE2]
+    semantic_action: contract_deployment
+
+  # Storage
+  sstore:
+    opcodes: [SSTORE]
+    semantic_action: storage_write
+    extract:
+      - name: slot
+        source: stack
+        offset: 0
+      - name: value
+        source: stack
+        offset: 1
+
+  sload:
+    opcodes: [SLOAD]
+    semantic_action: storage_read
+    extract:
+      - name: slot
+        source: stack
+        offset: 0
+
+  # ETH transfers
+  eth_transfer:
+    opcodes: [CALL]
+    condition: "value > 0 AND calldata_length == 0"
+    semantic_action: eth_transfer
+    extract:
+      - name: recipient
+        source: stack
+        offset: 1
+      - name: value
+        source: stack
+        offset: 2

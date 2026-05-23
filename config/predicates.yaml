@@ -1,0 +1,79 @@
+predicates:
+  balance_increased:
+    name: "Attacker Balance Increased"
+    description: "Attacker's token/ETH balance is higher post-exploit than pre-exploit"
+    type: state_diff
+    params:
+      - address
+      - token (optional, defaults to ETH)
+
+  balance_decreased:
+    name: "Victim Balance Decreased"
+    description: "Target protocol's balance decreased by the expected amount"
+    type: state_diff
+    params:
+      - address
+      - token
+      - min_amount
+
+  flash_loan_detected:
+    name: "Flash Loan Detected"
+    description: "Transaction contains a flash loan borrow and repay in same tx"
+    type: trace_pattern
+    params:
+      - protocol (aave, dydx, euler, balancer)
+
+  reentrancy_detected:
+    name: "Reentrancy Detected"
+    description: "Nested call re-enters a contract before prior invocation completes"
+    type: trace_pattern
+    params:
+      - target_contract
+      - function_selector
+
+  price_deviation:
+    name: "Price Deviation"
+    description: "Oracle price diverges significantly from reference within the tx"
+    type: state_diff
+    params:
+      - oracle_address
+      - max_deviation_bps
+
+  selfdestruct_called:
+    name: "SELFDESTRUCT Called"
+    description: "Contract self-destructed during the transaction"
+    type: opcode
+    params:
+      - contract_address
+
+  delegatecall_to_untrusted:
+    name: "DELEGATECALL to Untrusted"
+    description: "DELEGATECALL made to a contract not in the protocol's trusted set"
+    type: opcode
+    params:
+      - caller
+      - trusted_set
+
+  storage_slot_overwritten:
+    name: "Storage Slot Overwritten"
+    description: "A specific storage slot was written with an unexpected value"
+    type: state_diff
+    params:
+      - contract_address
+      - slot
+      - expected_value
+
+  governance_action_in_single_tx:
+    name: "Governance Action in Single TX"
+    description: "Proposal creation, voting, and execution all occur in one transaction"
+    type: trace_pattern
+    params:
+      - governance_contract
+
+  profit_exceeds_threshold:
+    name: "Profit Exceeds Threshold"
+    description: "Net attacker profit exceeds a given USD threshold"
+    type: computed
+    params:
+      - attacker_address
+      - threshold_usd

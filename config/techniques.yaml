@@ -1,0 +1,80 @@
+techniques:
+  flash_loan_attack:
+    name: "Flash Loan Attack"
+    description: "Exploit that relies on uncollateralized flash-borrowed capital"
+    indicators:
+      - "flash loan borrow at tx start"
+      - "flash loan repay at tx end"
+      - "large token movement within single tx"
+    sub_types:
+      - price_manipulation
+      - donation_attack
+      - arbitrage_exploit
+
+  reentrancy:
+    name: "Reentrancy"
+    description: "Recursive callback that re-enters a function before state is updated"
+    indicators:
+      - "nested CALL to same contract"
+      - "state write after external call"
+      - "repeated withdraw pattern"
+    sub_types:
+      - classic_reentrancy
+      - cross_function_reentrancy
+      - cross_contract_reentrancy
+      - read_only_reentrancy
+
+  price_oracle_manipulation:
+    name: "Price Oracle Manipulation"
+    description: "Manipulating on-chain price feeds to extract value"
+    indicators:
+      - "swap on DEX followed by oracle read"
+      - "large trade then borrow/liquidate"
+      - "TWAP window smaller than block time"
+    sub_types:
+      - spot_price_manipulation
+      - twap_manipulation
+      - oracle_stale_price
+
+  governance_manipulation:
+    name: "Governance Manipulation"
+    description: "Exploiting governance mechanisms via flash-borrowed voting power"
+    indicators:
+      - "flash loan -> token delegation -> proposal execution"
+      - "single-tx governance action"
+    sub_types:
+      - flash_loan_governance
+      - bribe_attack
+
+  access_control:
+    name: "Access Control Violation"
+    description: "Bypassing authorization checks"
+    indicators:
+      - "call to privileged function from unauthorized address"
+      - "missing modifier check"
+    sub_types:
+      - missing_auth
+      - privilege_escalation
+      - improper_initialization
+
+  logic_error:
+    name: "Logic Error"
+    description: "Flawed business logic enabling unintended behavior"
+    indicators:
+      - "unexpected state transition"
+      - "arithmetic overflow/underflow"
+    sub_types:
+      - rounding_error
+      - integer_overflow
+      - state_inconsistency
+
+  bridge_exploit:
+    name: "Bridge Exploit"
+    description: "Attacks targeting cross-chain bridge mechanisms"
+    indicators:
+      - "forged message proof"
+      - "replay of previous valid message"
+    sub_types:
+      - message_replay
+      - fake_proof
+      - validator_compromise

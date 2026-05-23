@@ -1,0 +1,22 @@
+scenario: euler
+name: "Euler Finance Exploit"
+date: "2023-03-13"
+
+chain: mainnet
+tx_hash: "0xc310a0affe2169d1f6feec1c63dbc7f7c62a887fa48795d327d4d2da2d6b111d"
+fork_block: 16817995
+attacker_address: "0xeBC29199C817Dc47BA12E3F86102564D640539d4"
+
+target_contracts:
+  - name: "Euler Protocol"
+    address: "0x27182842E098f60e3D576794A5bFFb0777E025d3"
+  - name: "eDAI"
+    address: "0xe025E3ca2bE02316033184551D4d3Aa22c860fDA"
+
+exploit_technique: "donation_attack"
+estimated_loss_usd: 197_000_000
+
+tags:
+  - flash_loan
+  - donation
+  - liquidation
