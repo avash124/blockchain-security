@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-import httpx
+from src.acquisition.rpc_client import RpcClient, RpcError
 
 
 class TraceFetchError(Exception):
@@ -44,10 +44,8 @@ class TransactionTrace:
 class TraceFetcher:
     """Fetches full EVM traces via debug_traceTransaction JSON-RPC."""
 
-    _RPC_TIMEOUT = 120.0  # debug_traceTransaction can be slow on complex txs
-
     def __init__(self, rpc_url: str):
-        self._rpc_url = rpc_url
+        self._rpc = RpcClient(rpc_url, timeout=120.0)
 
     def fetch_trace(self, tx_hash: str) -> TransactionTrace:
         """Fetch a full structured trace for a transaction.
@@ -102,48 +100,11 @@ class TraceFetcher:
         return tx_hash.lower()
 
     def _rpc_call(self, method: str, params: list[Any]) -> Any:
-        """Send a JSON-RPC 2.0 request and return the 'result' field."""
-        payload = {
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": method,
-            "params": params,
-        }
-
+        """Delegate to shared RPC client, wrapping errors."""
         try:
-            response = httpx.post(
-                self._rpc_url,
-                json=payload,
-                timeout=self._RPC_TIMEOUT,
-            )
-            response.raise_for_status()
-        except httpx.TimeoutException as exc:
-            raise TraceFetchError(
-                f"RPC request timed out for {method}: {exc}"
-            ) from exc
-        except httpx.HTTPStatusError as exc:
-            raise TraceFetchError(
-                f"RPC HTTP error for {method}: {exc.response.status_code}"
-            ) from exc
-        except httpx.RequestError as exc:
-            raise TraceFetchError(
-                f"RPC connection error for {method}: {exc}"
-            ) from exc
-
-        body = response.json()
-
-        if "error" in body:
-            err = body["error"]
-            code = err.get("code", "?")
-            message = err.get("message", str(err))
-            raise TraceFetchError(f"RPC error in {method} (code {code}): {message}")
-
-        if "result" not in body:
-            raise TraceFetchError(
-                f"RPC response for {method} missing 'result' field"
-            )
-
-        return body["result"]
+            return self._rpc.call(method, params)
+        except RpcError as exc:
+            raise TraceFetchError(str(exc)) from exc
 
     def _fetch_receipt(self, tx_hash: str) -> dict[str, Any]:
         """Fetch the transaction receipt for metadata."""

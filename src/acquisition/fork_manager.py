@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import shutil
 import subprocess
 import time
@@ -10,7 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-import httpx
+from src.acquisition.rpc_client import RpcClient, RpcError
 
 
 class ForkError(Exception):
@@ -102,18 +101,11 @@ class ForkManager:
 
     def _rpc_call(self, instance: AnvilInstance, method: str, params: list[Any]) -> Any:
         """Send a JSON-RPC call to an Anvil instance."""
-        payload = {
-            "jsonrpc": "2.0",
-            "method": method,
-            "params": params,
-            "id": 1,
-        }
-        response = httpx.post(instance.rpc_url, json=payload, timeout=10.0)
-        response.raise_for_status()
-        data = response.json()
-        if "error" in data:
-            raise ForkError(f"RPC error: {data['error']}")
-        return data["result"]
+        rpc = RpcClient(instance.rpc_url, timeout=10.0)
+        try:
+            return rpc.call(method, params)
+        except RpcError as exc:
+            raise ForkError(str(exc)) from exc
 
     @staticmethod
     def _find_anvil() -> str:
@@ -141,7 +133,7 @@ class ForkManager:
             try:
                 self._rpc_call(instance, "eth_chainId", [])
                 return
-            except (httpx.ConnectError, httpx.HTTPStatusError, httpx.TimeoutException):
+            except (ForkError, RpcError):
                 time.sleep(0.25)
 
         raise ForkError(f"Anvil on port {instance.port} not ready after {timeout}s")
