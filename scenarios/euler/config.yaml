@@ -16,6 +16,9 @@ target_contracts:
 exploit_technique: "donation_attack"
 estimated_loss_usd: 197_000_000
 
+tokens:
+  - "0x6B175474E89094C44Da98b954EedeAC495271d0F"  # DAI
+
 tags:
   - flash_loan
   - donation

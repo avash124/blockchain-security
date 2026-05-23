@@ -87,10 +87,18 @@ class ForensicPipeline:
         )
 
         # 6. Compute state diff
+        # Include the attacker EOA, declared target contracts, and the attack
+        # contract (tx.to stored in IR metadata) so profits that stay inside the
+        # attack contract are captured rather than appearing as zero gains.
         addresses = [scenario_config["attacker_address"]] + [
             c["address"] for c in scenario_config.get("target_contracts", [])
         ]
-        state_diff = self._state_diff_computer.compute(tx_hash, addresses)
+        attack_contract = ir_graph.metadata.get("tx_to", "")
+        if attack_contract and attack_contract.lower() not in {a.lower() for a in addresses}:
+            addresses.append(attack_contract)
+
+        tokens = scenario_config.get("tokens") or None
+        state_diff = self._state_diff_computer.compute(tx_hash, addresses, tokens=tokens)
 
         # 7. Run predicates
         logger.info("Evaluating predicates")
