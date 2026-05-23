@@ -2,9 +2,19 @@
 
 from __future__ import annotations
 
+import os
+import shutil
 import subprocess
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
+import httpx
+
+
+class ForkError(Exception):
+    """Raised when an Anvil fork operation fails."""
 
 
 @dataclass
@@ -42,25 +52,37 @@ class ForkManager:
             fork_block=fork_block,
         )
 
-        # TODO: spawn anvil subprocess
-        # cmd = [
-        #     "anvil",
-        #     "--fork-url", fork_url,
-        #     "--fork-block-number", str(fork_block),
-        #     "--port", str(port),
-        #     "--no-mining",
-        # ]
-        # instance.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        # self._wait_ready(instance)
+        anvil_bin = self._find_anvil()
+        cmd = [
+            anvil_bin,
+            "--fork-url", fork_url,
+            "--fork-block-number", str(fork_block),
+            "--port", str(port),
+            "--no-mining",
+            "--silent",
+        ]
+        instance.process = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        self._wait_ready(instance)
 
         self._instances[port] = instance
         return instance
 
     def stop_fork(self, instance: AnvilInstance) -> None:
         """Terminate an Anvil instance."""
-        if instance.process and instance.is_alive:
+        if instance.process is None:
+            self._instances.pop(instance.port, None)
+            return
+
+        if instance.is_alive:
             instance.process.terminate()
-            instance.process.wait(timeout=5)
+            try:
+                instance.process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                instance.process.kill()
+                instance.process.wait(timeout=5)
+
         self._instances.pop(instance.port, None)
 
     def stop_all(self) -> None:
@@ -68,10 +90,61 @@ class ForkManager:
         for instance in list(self._instances.values()):
             self.stop_fork(instance)
 
-    def _wait_ready(self, instance: AnvilInstance, timeout: float = 10.0) -> None:
+    def snapshot(self, instance: AnvilInstance) -> str:
+        """Create an EVM snapshot and return the snapshot ID."""
+        result = self._rpc_call(instance, "evm_snapshot", [])
+        return result
+
+    def revert(self, instance: AnvilInstance, snapshot_id: str) -> bool:
+        """Revert the EVM state to a previous snapshot."""
+        result = self._rpc_call(instance, "evm_revert", [snapshot_id])
+        return result
+
+    def _rpc_call(self, instance: AnvilInstance, method: str, params: list[Any]) -> Any:
+        """Send a JSON-RPC call to an Anvil instance."""
+        payload = {
+            "jsonrpc": "2.0",
+            "method": method,
+            "params": params,
+            "id": 1,
+        }
+        response = httpx.post(instance.rpc_url, json=payload, timeout=10.0)
+        response.raise_for_status()
+        data = response.json()
+        if "error" in data:
+            raise ForkError(f"RPC error: {data['error']}")
+        return data["result"]
+
+    @staticmethod
+    def _find_anvil() -> str:
+        """Locate the anvil binary, checking ~/.foundry/bin if not on PATH."""
+        found = shutil.which("anvil")
+        if found:
+            return found
+        foundry_bin = Path.home() / ".foundry" / "bin" / "anvil"
+        if foundry_bin.exists():
+            return str(foundry_bin)
+        raise ForkError("anvil not found. Install Foundry: curl -L https://foundry.paradigm.xyz | bash && foundryup")
+
+    def _wait_ready(self, instance: AnvilInstance, timeout: float = 30.0) -> None:
         """Poll until Anvil is accepting RPC connections."""
-        # TODO: implement health check loop
-        raise NotImplementedError
+        deadline = time.monotonic() + timeout
+
+        while time.monotonic() < deadline:
+            # Check if process died early
+            if instance.process is not None and instance.process.poll() is not None:
+                stderr_output = instance.process.stderr.read().decode() if instance.process.stderr else ""
+                raise ForkError(
+                    f"Anvil process exited with code {instance.process.returncode}: {stderr_output}"
+                )
+
+            try:
+                self._rpc_call(instance, "eth_chainId", [])
+                return
+            except (httpx.ConnectError, httpx.HTTPStatusError, httpx.TimeoutException):
+                time.sleep(0.25)
+
+        raise ForkError(f"Anvil on port {instance.port} not ready after {timeout}s")
 
     def __enter__(self) -> ForkManager:
         return self
