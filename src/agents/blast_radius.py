@@ -120,10 +120,18 @@ class BlastRadiusAnalyzer:
             ) and action.to_addr:
                 dependency_addresses.add(action.to_addr)
 
-        # Exclude the primary attacked contract (the `from_addr` of the root action).
-        root_contract = ir_graph.actions[0].to_addr if ir_graph.actions else None
-        if root_contract:
-            dependency_addresses.discard(root_contract)
+        # Exclude the root contract (actions[0].to_addr) unless it later acts as a
+        # *caller* at greater call-depth — that pattern indicates it re-enters the
+        # attacker's code (reentrancy) and is therefore a genuine dependency.
+        if ir_graph.actions:
+            root_contract = ir_graph.actions[0].to_addr
+            root_depth = ir_graph.actions[0].depth
+            participates_deeper = any(
+                a.from_addr == root_contract and a.depth > root_depth
+                for a in ir_graph.actions[1:]
+            )
+            if root_contract and not participates_deeper:
+                dependency_addresses.discard(root_contract)
 
         return sorted(dependency_addresses)
 
