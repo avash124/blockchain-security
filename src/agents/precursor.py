@@ -160,6 +160,7 @@ class PrecursorAnalyzer:
         self, tx: dict[str, Any], attacker_address: str
     ) -> PrecursorTx | None:
         """Classify a transaction as a precursor type or None if irrelevant."""
+        attacker_address = attacker_address.lower()
         from_addr = tx.get("from", "").lower()
         to_addr = tx.get("to", "").lower()
         is_error = tx.get("isError", "0") == "1"
