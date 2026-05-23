@@ -44,21 +44,22 @@ class PatternMatcher:
         frame: TraceFrame,
         all_frames: list[TraceFrame],
         index: int,
+        tx_from: str = "",
     ) -> tuple[SemanticAction, int] | None:
         """Try to match the current frame against known patterns.
 
         Returns (SemanticAction, frames_consumed) or None.
         """
         if frame.op == "CALL":
-            return self._match_call(frame, all_frames, index)
+            return self._match_call(frame, all_frames, index, tx_from)
         elif frame.op == "DELEGATECALL":
             return self._match_delegatecall(frame, all_frames, index)
         elif frame.op == "SELFDESTRUCT":
-            return self._match_selfdestruct(frame)
+            return self._match_selfdestruct(frame, all_frames, index, tx_from)
         elif frame.op == "SSTORE":
-            return self._match_sstore(frame)
+            return self._match_sstore(frame, all_frames, index, tx_from)
         elif frame.op == "CREATE2":
-            return self._match_create2(frame)
+            return self._match_create2(frame, all_frames, index, tx_from)
         return None
 
     def _match_call(
@@ -66,6 +67,7 @@ class PatternMatcher:
         frame: TraceFrame,
         all_frames: list[TraceFrame],
         index: int,
+        tx_from: str = "",
     ) -> tuple[SemanticAction, int] | None:
         """Match CALL opcode against known function selectors.
 
@@ -83,13 +85,14 @@ class PatternMatcher:
 
         target_addr = _normalize_address(target_raw)
         value = _parse_stack_int(value_raw)
+        caller = _resolve_caller(all_frames, index, frame.depth, tx_from)
 
         # Plain ETH transfer — no calldata at all
         if args_length == 0:
             action = SemanticAction(
                 action_type=ActionType.ETH_TRANSFER,
                 depth=frame.depth,
-                from_addr="",
+                from_addr=caller,
                 to_addr=target_addr,
                 params={"value": value},
             )
@@ -102,7 +105,7 @@ class PatternMatcher:
             action = SemanticAction(
                 action_type=action_type,
                 depth=frame.depth,
-                from_addr="",
+                from_addr=caller,
                 to_addr=target_addr,
                 params={
                     "selector": selector,
@@ -119,7 +122,7 @@ class PatternMatcher:
             action = SemanticAction(
                 action_type=ActionType.ETH_TRANSFER,
                 depth=frame.depth,
-                from_addr="",
+                from_addr=caller,
                 to_addr=target_addr,
                 params={"value": value, "selector": selector},
             )
@@ -140,7 +143,7 @@ class PatternMatcher:
         if not memory or args_length < 4:
             return None
 
-        flat = "".join(memory)
+        flat = "".join(m.removeprefix("0x").removeprefix("0X") for m in memory)
         byte_start = args_offset * 2  # 1 byte == 2 hex chars
         selector_end = byte_start + 8  # 4 bytes == 8 hex chars
 
@@ -168,51 +171,68 @@ class PatternMatcher:
         )
         return action, 1
 
-    def _match_selfdestruct(self, frame: TraceFrame) -> tuple[SemanticAction, int] | None:
+    def _match_selfdestruct(
+        self, frame: TraceFrame, all_frames: list[TraceFrame], index: int, tx_from: str,
+    ) -> tuple[SemanticAction, int] | None:
         beneficiary = frame.stack[-1] if frame.stack else "0x0"
+        caller = _resolve_caller(all_frames, index, frame.depth, tx_from)
         action = SemanticAction(
             action_type=ActionType.SELF_DESTRUCT,
             depth=frame.depth,
-            from_addr="",
+            from_addr=caller,
             to_addr=beneficiary,
             params={"beneficiary": beneficiary},
         )
         return action, 1
 
-    def _match_sstore(self, frame: TraceFrame) -> tuple[SemanticAction, int] | None:
+    def _match_sstore(
+        self, frame: TraceFrame, all_frames: list[TraceFrame], index: int, tx_from: str,
+    ) -> tuple[SemanticAction, int] | None:
         slot = frame.stack[-1] if len(frame.stack) >= 1 else "0x0"
         value = frame.stack[-2] if len(frame.stack) >= 2 else "0x0"
+        caller = _resolve_caller(all_frames, index, frame.depth, tx_from)
         action = SemanticAction(
             action_type=ActionType.STORAGE_WRITE,
             depth=frame.depth,
-            from_addr="",
-            to_addr="",
+            from_addr=caller,
+            to_addr=caller,
             params={"slot": slot, "value": value},
         )
         return action, 1
 
-    def _match_create2(self, frame: TraceFrame) -> tuple[SemanticAction, int] | None:
+    def _match_create2(
+        self, frame: TraceFrame, all_frames: list[TraceFrame], index: int, tx_from: str,
+    ) -> tuple[SemanticAction, int] | None:
+        caller = _resolve_caller(all_frames, index, frame.depth, tx_from)
         action = SemanticAction(
             action_type=ActionType.CONTRACT_DEPLOYMENT,
             depth=frame.depth,
-            from_addr="",
+            from_addr=caller,
             to_addr="",
             params={"opcode": "CREATE2"},
         )
         return action, 1
 
 
-def _resolve_caller_contract(
+def _resolve_caller(
     all_frames: list[TraceFrame],
     index: int,
     current_depth: int,
+    tx_from: str = "",
 ) -> str:
-    """Find the address of the contract currently executing at current_depth.
+    """Resolve which address is executing at current_depth.
 
-    Scans backwards from index for the most recent CALL/STATICCALL/CALLCODE
-    at depth (current_depth - 1) — its stack[-2] (addr) is the contract that
-    received control and is now issuing the DELEGATECALL.
+    At depth 1, the executor is the transaction's `to` address (the contract
+    the EOA called). At deeper depths, scan backwards for the CALL/STATICCALL
+    at depth-1 whose target is the contract now executing.
+
+    For the *caller* of a CALL at depth N, we want the contract executing at
+    depth N — i.e. the target of the CALL that entered depth N from depth N-1.
+    At depth 1, that's the tx.to (the first contract called by the EOA).
     """
+    if current_depth <= 1:
+        return tx_from
+
     entry_ops = {"CALL", "STATICCALL", "CALLCODE", "CREATE", "CREATE2"}
     for i in range(index - 1, -1, -1):
         f = all_frames[i]
@@ -221,6 +241,15 @@ def _resolve_caller_contract(
                 return _normalize_address(f.stack[-2])
             break
     return ""
+
+
+def _resolve_caller_contract(
+    all_frames: list[TraceFrame],
+    index: int,
+    current_depth: int,
+) -> str:
+    """Legacy wrapper — used by DELEGATECALL matching."""
+    return _resolve_caller(all_frames, index, current_depth)
 
 
 def _parse_stack_int(value: str) -> int:
