@@ -229,6 +229,10 @@ class ForensicPipeline:
         tokens = scenario_config.get("tokens") or None
         state_diff = self._state_diff_computer.compute(tx_hash, addresses, tokens=tokens)
 
+        # 6.5 Blast radius analysis
+        logger.info("Analyzing blast radius")
+        blast_radius_report = self._blast_radius.analyze(ir_graph, state_diff, scenario_config)
+
         # 7. Run predicates
         logger.info("Evaluating predicates")
         predicate_results = self._predicate_engine.evaluate_all(
@@ -258,6 +262,7 @@ class ForensicPipeline:
             mermaid_diagram=mermaid,
             scenario_config=scenario_config,
             output_path=self._config.output_dir / f"{scenario_name}_report.html",
+            blast_radius=blast_radius_report,
         )
 
         return verdict

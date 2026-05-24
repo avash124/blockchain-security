@@ -54,6 +54,22 @@
             font-weight: 700;
             font-size: 1.05rem;
         }
+
+        /* Blast radius */
+        .risk-high   { color: #e74c3c; font-weight: 700; }
+        .risk-medium { color: #f39c12; font-weight: 600; }
+        .risk-low    { color: #27ae60; }
+        #blast-radius .primary-loss {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #e74c3c;
+            margin-bottom: 1.2rem;
+        }
+        #blast-radius ul {
+            padding-left: 1.2rem;
+            margin: 0.4rem 0 0;
+        }
+        #blast-radius ul li { margin-bottom: 0.3rem; }
     </style>
 </head>
 <body>
@@ -189,6 +205,59 @@
                 {% endfor %}
             </tbody>
         </table>
+    </section>
+    {% endif %}
+
+    {% if blast_radius %}
+    <section id="blast-radius">
+        <h3>Blast Radius</h3>
+        <div class="primary-loss">
+            Total Estimated Loss: ${{ "{:,.2f}".format(blast_radius.primary_loss_usd) }}
+        </div>
+
+        {% if blast_radius.affected_protocols %}
+        <h4>Affected Protocols</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Protocol</th>
+                    <th>Address</th>
+                    <th>Relationship</th>
+                    <th>Risk</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for proto in blast_radius.affected_protocols %}
+                <tr>
+                    <td><strong>{{ proto.name }}</strong></td>
+                    <td><code>{{ proto.address or "—" }}</code></td>
+                    <td>{{ proto.relationship }}</td>
+                    <td class="risk-{{ proto.risk_level | lower }}">{{ proto.risk_level | upper }}</td>
+                    <td>{{ proto.details }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if blast_radius.cascading_risks %}
+        <h4>Cascading Risks</h4>
+        <ul>
+            {% for risk in blast_radius.cascading_risks %}
+            <li>{{ risk }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% if blast_radius.recommendations %}
+        <h4>Recommendations</h4>
+        <ul>
+            {% for rec in blast_radius.recommendations %}
+            <li>{{ rec }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
     </section>
     {% endif %}
 
