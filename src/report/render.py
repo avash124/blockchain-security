@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from src.agents.blast_radius import BlastRadiusReport
 from src.ir.nodes import IRGraph
 from src.verifier.verdict import VerdictReport
 
@@ -23,6 +24,7 @@ class ReportRenderer:
         scenario_config: dict[str, Any],
         output_path: Path,
         security_fixes: list[dict[str, str]] | None = None,
+        blast_radius: BlastRadiusReport | None = None,
     ) -> Path:
         """Render the report and write to disk."""
         try:
@@ -43,6 +45,7 @@ class ReportRenderer:
             actions=ir_graph.to_dict()["actions"],
             edges=ir_graph.to_dict()["edges"],
             security_fixes=security_fixes or [],
+            blast_radius=blast_radius,
         )
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
