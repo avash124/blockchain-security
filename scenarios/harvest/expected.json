@@ -1,0 +1,7 @@
+{
+  "scenario": "harvest",
+  "verdict": "VERIFIED",
+  "technique": "price_oracle_manipulation",
+  "confidence": 0.80,
+  "notes": "Attacker used Uniswap V2 flash swaps (categorised as DEX_SWAP by IR) to manipulate Curve pool price, then deposited/withdrew from Harvest fUSDC vault at the distorted price. Profits: ~14.8 ETH + ~$691k USDC in this single transaction (~$34M total across all attack txs)."
+}

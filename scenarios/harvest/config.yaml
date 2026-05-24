@@ -1,0 +1,26 @@
+scenario: harvest
+name: "Harvest Finance Flash Loan Oracle Manipulation"
+date: "2020-10-26"
+
+chain: mainnet
+tx_hash: "0x35f8d2f572fceaac9288e5d462117850ef2694786992a8c3f6d02612277b0877"
+fork_block: 11129473
+attacker_address: "0xf224ab004461540778a914ea397c589b677e27bb"
+
+target_contracts:
+  - name: "Harvest fUSDC Vault"
+    address: "0x3DA9D911301f8144bdF5c3c67886e5373DCdff8e"
+  - name: "Curve Y Pool"
+    address: "0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51"
+
+exploit_technique: "price_oracle_manipulation"
+estimated_loss_usd: 34_000_000
+
+tokens:
+  - "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"  # USDC
+  - "0xdAC17F958D2ee523a2206206994597C13D831ec7"  # USDT
+
+tags:
+  - dex_swap
+  - price_manipulation
+  - flash_swap

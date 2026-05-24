@@ -111,9 +111,22 @@ class ExploitClassifier:
             meta_str = ", ".join(f"{k}={v}" for k, v in ir_graph.metadata.items())
             lines.append(f"Metadata: {meta_str}")
 
-        # Ordered action list
+        # Ordered action list — omit high-volume noise types from the body;
+        # they are already captured in the distribution summary above.
+        _NOISE = {"storage_write", "storage_read", "unknown"}
+        _MAX_ACTIONS = 80
+        notable = [a for a in ir_graph.actions if a.action_type.value not in _NOISE]
+        noise_count = len(ir_graph.actions) - len(notable)
+        display = notable[:_MAX_ACTIONS]
+
         lines += ["", "## Action Sequence"]
-        for i, action in enumerate(ir_graph.actions):
+        if noise_count:
+            lines.append(
+                f"  [+{noise_count} storage_read/write ops omitted — see distribution above]"
+            )
+        if len(notable) > _MAX_ACTIONS:
+            lines.append(f"  [showing first {_MAX_ACTIONS} of {len(notable)} notable actions]")
+        for i, action in enumerate(display):
             params_str = (
                 ", ".join(f"{k}={v}" for k, v in action.params.items())
                 if action.params
@@ -126,10 +139,14 @@ class ExploitClassifier:
                 f"  {i + 1:>3}. [{action.action_type.value}] {depth_info} {addr_info}{detail}"
             )
 
-        # Control/data flow edges
-        if ir_graph.edges:
-            lines += ["", "## Control / Data Flow Edges"]
-            for from_id, to_id, label in ir_graph.edges:
+        # Control/data flow edges — only non-sequence edges carry semantic signal
+        _MAX_EDGES = 60
+        semantic_edges = [
+            (f, t, l) for f, t, l in ir_graph.edges if l != "sequence"
+        ]
+        if semantic_edges:
+            lines += ["", "## Semantic Edges (flash_loan_scope / amount_match / storage_dep)"]
+            for from_id, to_id, label in semantic_edges[:_MAX_EDGES]:
                 lines.append(f"  {from_id} --[{label}]--> {to_id}")
 
         # Techniques taxonomy for grounded classification

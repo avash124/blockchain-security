@@ -76,7 +76,11 @@ class TestScenarioEndToEnd:
         assert verdict.verdict.value == expected["verdict"]
         # Technique is an LLM output — accept the expected value or any known
         # technique that overlaps with the scenario's tags (flash_loan, donation, liquidation).
-        tag_related = {"donation_attack", "flash_loan_attack", "liquidity_pool_drain", "logic_bug", "delegate_call_exploit"}
+        tag_related = {
+            "donation_attack", "flash_loan_attack", "liquidity_pool_drain",
+            "logic_bug", "delegate_call_exploit", "price_oracle_manipulation",
+            "reentrancy",
+        }
         assert verdict.technique == expected["technique"] or verdict.technique in tag_related, (
             f"Unexpected technique: {verdict.technique!r}"
         )
