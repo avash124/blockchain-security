@@ -102,18 +102,28 @@ class PatternMatcher:
 
         if selector and selector in self._selector_map:
             name, action_type = self._selector_map[selector]
+            params: dict[str, Any] = {
+                "selector": selector,
+                "function": name,
+                "value": value,
+            }
+            # Decode common ERC-20 transfer calldata so downstream consumers
+            # (classifier prompt, predicates) can see the actual recipient
+            # and amount — not just opaque memory offsets.
+            decoded = self._decode_token_transfer_args(
+                frame.memory, args_offset, args_length, selector
+            )
+            if decoded:
+                params.update(decoded)
+            else:
+                params["args_offset"] = args_offset
+                params["args_length"] = args_length
             action = SemanticAction(
                 action_type=action_type,
                 depth=frame.depth,
                 from_addr=caller,
                 to_addr=target_addr,
-                params={
-                    "selector": selector,
-                    "function": name,
-                    "value": value,
-                    "args_offset": args_offset,
-                    "args_length": args_length,
-                },
+                params=params,
             )
             return action, 1
 
@@ -151,6 +161,58 @@ class PatternMatcher:
             return None
 
         return "0x" + flat[byte_start:selector_end].lower()
+
+    @staticmethod
+    def _read_word(memory: list[str] | None, offset_bytes: int) -> str | None:
+        """Read one 32-byte word from EVM memory starting at the given byte offset."""
+        if not memory:
+            return None
+        flat = "".join(m.removeprefix("0x").removeprefix("0X") for m in memory)
+        start = offset_bytes * 2
+        end = start + 64
+        if len(flat) < end:
+            return None
+        return flat[start:end].lower()
+
+    def _decode_token_transfer_args(
+        self,
+        memory: list[str] | None,
+        args_offset: int,
+        args_length: int,
+        selector: str,
+    ) -> dict[str, Any]:
+        """Decode recipient/amount (and sender for transferFrom) from calldata.
+
+        Without this decoding the classifier only sees `to=<token contract>`
+        and cannot tell who actually received the tokens — which makes
+        donation-style patterns (transfer directly into a pool) invisible.
+        """
+        # transfer(address,uint256): selector(4) + recipient(32) + amount(32)
+        if selector == "0xa9059cbb" and args_length >= 36:
+            rcpt = self._read_word(memory, args_offset + 4)
+            amt = self._read_word(memory, args_offset + 36)
+            if rcpt is None:
+                return {}
+            out: dict[str, Any] = {"recipient": "0x" + rcpt[-40:]}
+            if amt is not None:
+                out["amount"] = int(amt, 16)
+            return out
+
+        # transferFrom(address,address,uint256): selector(4) + from(32) + to(32) + amount(32)
+        if selector == "0x23b872dd" and args_length >= 68:
+            sender = self._read_word(memory, args_offset + 4)
+            rcpt = self._read_word(memory, args_offset + 36)
+            amt = self._read_word(memory, args_offset + 68)
+            if rcpt is None:
+                return {}
+            out = {"recipient": "0x" + rcpt[-40:]}
+            if sender is not None:
+                out["sender"] = "0x" + sender[-40:]
+            if amt is not None:
+                out["amount"] = int(amt, 16)
+            return out
+
+        return {}
 
     def _match_delegatecall(
         self,

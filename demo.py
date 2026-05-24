@@ -7,6 +7,10 @@ import os
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from src.orchestrator import ForensicPipeline, PipelineConfig
 
 
@@ -32,7 +36,7 @@ def main():
         scenario_dir=scenarios_dir,
         rpc_url=os.getenv("MAINNET_RPC_URL", ""),
         etherscan_api_key=os.getenv("ETHERSCAN_API_KEY", ""),
-        anthropic_api_key=os.getenv("ANTHROPIC_API_KEY", ""),
+        anthropic_api_key=os.getenv("OPENAI_API_KEY", ""),
         output_dir=Path("output"),
     )
 
