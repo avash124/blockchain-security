@@ -48,18 +48,38 @@ class TraceFetcher:
         self._rpc = RpcClient(rpc_url, timeout=120.0)
 
     def fetch_trace(self, tx_hash: str) -> TransactionTrace:
-        """Fetch a full structured trace for a transaction.
+        """Fetch a structured trace for a transaction.
 
-        Makes two RPC calls:
-        1. eth_getTransactionReceipt — for from/to/value/gasUsed/status
-        2. debug_traceTransaction  — for the struct-log opcode trace
+        Uses the lightweight `callTracer` (typically <2MB, ~0.3s) rather than
+        a full struct-log. We synthesize one TraceFrame per call so the
+        existing opcode-based PatternMatcher works unchanged.
+
+        Tradeoff: SSTORE, SELFDESTRUCT, and other in-frame opcode events are
+        invisible. Acceptable for CALL-driven exploits (flash loans, oracle
+        manipulation, reentrancy via call graph); not for pure-storage logic
+        bugs. Switch to fetch_full_trace() if you need opcode resolution.
         """
         tx_hash = self._normalize_tx_hash(tx_hash)
 
         receipt = self._fetch_receipt(tx_hash)
-        raw_trace = self._fetch_struct_log(tx_hash)
+        call_tree = self._fetch_call_tree_raw(tx_hash)
+        frames = self._flatten_call_tree(call_tree, depth=1)
 
-        return self._parse_trace_json(raw_trace, tx_hash=tx_hash, receipt=receipt)
+        from_addr = receipt.get("from", "")
+        to_addr = receipt.get("to") or ""
+        gas_used_raw = receipt.get("gasUsed", "0x0")
+        status_raw = receipt.get("status", "0x1")
+
+        return TransactionTrace(
+            tx_hash=tx_hash,
+            from_addr=from_addr.lower() if from_addr else "",
+            to_addr=to_addr.lower() if to_addr else "",
+            value=0,  # receipts don't carry value; fetch via eth_getTransactionByHash if needed
+            gas_used=_parse_hex_int(gas_used_raw),
+            status=_parse_hex_int(status_raw) == 1,
+            frames=frames,
+            call_tree=call_tree,
+        )
 
     def fetch_call_tree(self, tx_hash: str) -> dict[str, Any]:
         """Fetch the nested call tree (debug_traceTransaction with callTracer)."""
@@ -116,70 +136,113 @@ class TraceFetcher:
             )
         return result
 
-    def _fetch_struct_log(self, tx_hash: str) -> dict[str, Any]:
-        """Fetch the struct-log trace via debug_traceTransaction."""
+    def _fetch_call_tree_raw(self, tx_hash: str) -> dict[str, Any]:
+        """Fetch the nested call tree via debug_traceTransaction + callTracer."""
         result = self._rpc_call(
             "debug_traceTransaction",
             [
                 tx_hash,
                 {
-                    "enableMemory": True,
-                    "enableReturnData": True,
+                    "tracer": "callTracer",
+                    "tracerConfig": {"withLog": True},
                 },
             ],
         )
-
         if not isinstance(result, dict):
             raise TraceFetchError(
-                f"Unexpected struct-log response type for {tx_hash}: {type(result)}"
+                f"Unexpected callTracer response type for {tx_hash}: {type(result)}"
             )
-
         return result
 
-    def _parse_trace_json(
-        self,
-        raw: dict[str, Any],
-        *,
-        tx_hash: str,
-        receipt: dict[str, Any],
-    ) -> TransactionTrace:
-        """Parse raw JSON trace and receipt into structured dataclasses."""
+    def _flatten_call_tree(
+        self, node: dict[str, Any], depth: int,
+    ) -> list[TraceFrame]:
+        """DFS through the call tree, emitting one synthesized TraceFrame per call.
+
+        Stack and memory are reconstructed to match what PatternMatcher's
+        opcode matchers expect, so the lifter doesn't need to know we're
+        coming from callTracer instead of struct logs.
+        """
         frames: list[TraceFrame] = []
-        for log in raw.get("structLogs", []):
-            return_data = log.get("returnData")
-            # Some nodes return returnData as empty string — normalize to None
-            if return_data == "":
-                return_data = None
+        op_raw = (node.get("type") or "CALL").upper()
+        # callTracer reports CREATE2 sometimes as just "CREATE" — we lose the
+        # distinction but PatternMatcher only handles CREATE2 today anyway.
+        if op_raw in ("CALL", "STATICCALL", "DELEGATECALL", "CALLCODE"):
+            frames.append(self._synth_call_frame(node, depth, op_raw))
+        elif op_raw in ("CREATE", "CREATE2"):
+            frames.append(self._synth_create_frame(node, depth))
 
-            frames.append(
-                TraceFrame(
-                    pc=int(log.get("pc", 0)),
-                    op=log.get("op", "UNKNOWN"),
-                    gas=_parse_int(log.get("gas", 0)),
-                    gas_cost=_parse_int(log.get("gasCost", 0)),
-                    depth=int(log.get("depth", 1)),
-                    stack=log.get("stack", []),
-                    memory=log.get("memory") or None,
-                    storage=log.get("storage") or None,
-                    return_data=return_data,
-                )
-            )
+        for child in node.get("calls", []) or []:
+            frames.extend(self._flatten_call_tree(child, depth + 1))
+        return frames
 
-        # Extract metadata from receipt
-        from_addr = receipt.get("from", "")
-        to_addr = receipt.get("to") or ""  # contract-creation txs have to=null
-        value_raw = receipt.get("value")
-        gas_used_raw = receipt.get("gasUsed", "0x0")
-        status_raw = receipt.get("status", "0x1")
+    def _synth_call_frame(
+        self, node: dict[str, Any], depth: int, op: str,
+    ) -> TraceFrame:
+        """Build a CALL/STATICCALL/DELEGATECALL/CALLCODE frame from a call-tree node.
 
-        return TransactionTrace(
-            tx_hash=tx_hash,
-            from_addr=from_addr.lower() if from_addr else "",
-            to_addr=to_addr.lower() if to_addr else "",
-            value=_parse_hex_int(value_raw) if value_raw is not None else 0,
-            gas_used=_parse_hex_int(gas_used_raw),
-            status=_parse_hex_int(status_raw) == 1,
-            frames=frames,
+        PatternMatcher._match_call reads (TOS-last):
+          stack[-2]=addr, stack[-3]=value, stack[-4]=argsOffset, stack[-5]=argsLength
+        and _extract_selector reads memory[byte_start:byte_start+8] starting
+        at byte_start=argsOffset*2. We place calldata at offset 0.
+        """
+        to_addr = (node.get("to") or "").lower()
+        value = node.get("value") or "0x0"
+        input_data = node.get("input") or "0x"
+
+        calldata_hex = input_data.removeprefix("0x").removeprefix("0X")
+        args_length = len(calldata_hex) // 2  # bytes
+
+        # 32-byte address word (right-aligned, lower 20 bytes)
+        addr_word = to_addr.removeprefix("0x").zfill(64)
+
+        # Stack TOS-last: gas | addr | value | argsOff | argsLen | retOff | retLen
+        stack = [
+            "0x0",            # retLength
+            "0x0",            # retOffset
+            hex(args_length), # argsLength
+            "0x0",            # argsOffset (calldata at memory[0])
+            value,            # value
+            "0x" + addr_word, # target address
+            "0xffff",         # gas
+        ]
+
+        memory: list[str] | None = None
+        if calldata_hex:
+            # Pad to a multiple of 64 hex chars (32 bytes)
+            padded = calldata_hex.ljust(((len(calldata_hex) + 63) // 64) * 64, "0")
+            memory = [padded[i:i + 64] for i in range(0, len(padded), 64)]
+
+        return TraceFrame(
+            pc=0,
+            op=op,
+            gas=_parse_int(node.get("gas", "0x0")),
+            gas_cost=_parse_int(node.get("gasUsed", "0x0")),
+            depth=depth,
+            stack=stack,
+            memory=memory,
+            storage=None,
+            return_data=node.get("output"),
+        )
+
+    def _synth_create_frame(
+        self, node: dict[str, Any], depth: int,
+    ) -> TraceFrame:
+        """Build a CREATE2 frame from a contract-deployment call-tree node.
+
+        We emit op=CREATE2 regardless of whether the underlying op was CREATE
+        or CREATE2 since PatternMatcher only matches CREATE2 today.
+        """
+        return TraceFrame(
+            pc=0,
+            op="CREATE2",
+            gas=_parse_int(node.get("gas", "0x0")),
+            gas_cost=_parse_int(node.get("gasUsed", "0x0")),
+            depth=depth,
+            stack=[],
+            memory=None,
+            storage=None,
+            return_data=node.get("output"),
         )
 
 

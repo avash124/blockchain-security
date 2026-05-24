@@ -176,6 +176,21 @@ class BlastRadiusAnalyzer:
 
         return total
 
+    # Token-budget caps for the prompt. Large exploits (e.g. Cream at ~14.9M
+    # gas) lift into thousands of IR actions; sending every one blows past
+    # provider TPM limits. We send a representative arc instead — the head
+    # captures setup/flash-loan, the tail captures drainage/repay.
+    _MAX_HEAD_ACTIONS = 25
+    _MAX_TAIL_ACTIONS = 15
+    _MAX_BALANCE_GAINS = 8
+    _MAX_BALANCE_LOSSES = 8
+    _MAX_STORAGE_CHANGES = 10
+    _MAX_SHARED_DEPS = 15
+    _MAX_SCENARIO_FIELDS = {
+        "scenario", "name", "chain", "tx_hash", "fork_block",
+        "attacker_address", "exploit_technique", "estimated_loss_usd", "tags",
+    }
+
     def _build_blast_radius_prompt(
         self,
         ir_graph: IRGraph,
@@ -190,47 +205,76 @@ class BlastRadiusAnalyzer:
             "",
         ]
 
-        # Scenario metadata (target protocol name, block, etc.)
+        # Scenario metadata — whitelist the small, high-signal fields only
+        # (full configs can carry verbose target_contracts arrays).
         if scenario_config:
-            meta = ", ".join(f"{k}={v}" for k, v in scenario_config.items() if k != "token_prices")
-            lines.append(f"Scenario: {meta}")
-
-        # Actions involved in the exploit
-        lines += ["", "## Exploit Action Sequence"]
-        for i, action in enumerate(ir_graph.actions):
-            params_str = (
-                ", ".join(f"{k}={v}" for k, v in action.params.items())
-                if action.params
-                else ""
+            meta = ", ".join(
+                f"{k}={v}"
+                for k, v in scenario_config.items()
+                if k in self._MAX_SCENARIO_FIELDS
             )
-            detail = f" ({params_str})" if params_str else ""
-            lines.append(
-                f"  {i + 1:>3}. [{action.action_type.value}] "
-                f"from={action.from_addr or '?'} to={action.to_addr or '?'}{detail}"
-            )
+            if meta:
+                lines.append(f"Scenario: {meta}")
 
-        # Balance changes
-        lines += ["", "## Balance Changes"]
-        for bc in state_diff.balance_changes:
-            sign = "+" if bc.delta > 0 else ""
-            lines.append(
-                f"  {bc.address} [{bc.token}]: {sign}{bc.delta} "
-                f"(before={bc.before}, after={bc.after})"
+        # Action distribution: a compact frequency table tells the LLM the
+        # exploit shape ("4 flash loans, 200 transfers, 50 swaps") without
+        # listing every action individually.
+        type_counts: dict[str, int] = {}
+        for action in ir_graph.actions:
+            key = action.action_type.value
+            type_counts[key] = type_counts.get(key, 0) + 1
+        if type_counts:
+            dist = ", ".join(
+                f"{k}={v}" for k, v in sorted(type_counts.items(), key=lambda kv: -kv[1])
             )
+            lines += ["", f"## Action Distribution ({len(ir_graph.actions)} total)", f"  {dist}"]
 
-        # Storage changes
-        if state_diff.storage_changes:
-            lines += ["", "## Storage Changes"]
-            for sc in state_diff.storage_changes:
+        # Representative action arc: head (setup) + tail (drainage).
+        lines += ["", "## Exploit Action Arc (head + tail)"]
+        head, tail = self._sample_actions(ir_graph.actions)
+        for i, action in head:
+            lines.append(self._format_action_line(i, action))
+        if tail and len(ir_graph.actions) > self._MAX_HEAD_ACTIONS + self._MAX_TAIL_ACTIONS:
+            skipped = len(ir_graph.actions) - self._MAX_HEAD_ACTIONS - self._MAX_TAIL_ACTIONS
+            lines.append(f"  ... ({skipped} actions omitted) ...")
+        for i, action in tail:
+            lines.append(self._format_action_line(i, action))
+
+        # Top balance movements only — gainers and losers ranked by magnitude.
+        gains, losses = self._top_balance_changes(state_diff)
+        if gains or losses:
+            lines += ["", "## Top Balance Movements"]
+            for bc in gains:
                 lines.append(
-                    f"  {sc.contract} slot={sc.slot}: {sc.before} → {sc.after}"
+                    f"  + {self._short_addr(bc.address)} [{self._short_token(bc.token)}]: "
+                    f"+{bc.delta}"
+                )
+            for bc in losses:
+                lines.append(
+                    f"  - {self._short_addr(bc.address)} [{self._short_token(bc.token)}]: "
+                    f"{bc.delta}"
                 )
 
-        # Shared dependency contracts identified from the IR graph
+        # Storage changes — capped.
+        if state_diff.storage_changes:
+            lines += ["", "## Storage Changes (capped)"]
+            for sc in state_diff.storage_changes[: self._MAX_STORAGE_CHANGES]:
+                lines.append(
+                    f"  {self._short_addr(sc.contract)} slot={sc.slot[:10]}…: "
+                    f"{sc.before[:10]}… → {sc.after[:10]}…"
+                )
+            if len(state_diff.storage_changes) > self._MAX_STORAGE_CHANGES:
+                lines.append(
+                    f"  ... ({len(state_diff.storage_changes) - self._MAX_STORAGE_CHANGES} more) ..."
+                )
+
+        # Shared-dependency contracts — capped, shortened.
         if shared_deps:
             lines += ["", "## Detected Shared-Dependency Contracts"]
-            for addr in shared_deps:
-                lines.append(f"  {addr}")
+            for addr in shared_deps[: self._MAX_SHARED_DEPS]:
+                lines.append(f"  {self._short_addr(addr)}")
+            if len(shared_deps) > self._MAX_SHARED_DEPS:
+                lines.append(f"  ... ({len(shared_deps) - self._MAX_SHARED_DEPS} more) ...")
 
         lines += [
             "",
@@ -238,6 +282,77 @@ class BlastRadiusAnalyzer:
             "and mitigation recommendations.",
         ]
         return "\n".join(lines)
+
+    # ------------------------------------------------------------------
+    # Prompt-trimming helpers
+    # ------------------------------------------------------------------
+
+    def _sample_actions(
+        self, actions: list[Any],
+    ) -> tuple[list[tuple[int, Any]], list[tuple[int, Any]]]:
+        """Return (head, tail) representative slices with original indices."""
+        if len(actions) <= self._MAX_HEAD_ACTIONS + self._MAX_TAIL_ACTIONS:
+            return list(enumerate(actions)), []
+        head = list(enumerate(actions[: self._MAX_HEAD_ACTIONS]))
+        tail_start = len(actions) - self._MAX_TAIL_ACTIONS
+        tail = [(tail_start + i, a) for i, a in enumerate(actions[tail_start:])]
+        return head, tail
+
+    def _format_action_line(self, idx: int, action: Any) -> str:
+        """Compact one-line representation of an IR action.
+
+        Only the highest-signal params (value, function, token, amount) survive
+        — the full params dict is dropped because individual flash-loan calls
+        can carry 5+ fields and we have thousands of them.
+        """
+        keep_keys = ("function", "value", "amount", "token", "slot")
+        kept = {k: action.params[k] for k in keep_keys if k in action.params}
+        detail = (
+            " (" + ", ".join(f"{k}={self._compact_value(v)}" for k, v in kept.items()) + ")"
+            if kept
+            else ""
+        )
+        return (
+            f"  {idx + 1:>4}. [{action.action_type.value}] d={action.depth} "
+            f"to={self._short_addr(action.to_addr)}{detail}"
+        )
+
+    def _top_balance_changes(
+        self, state_diff: StateDiff,
+    ) -> tuple[list[Any], list[Any]]:
+        """Top N gainers and losers by absolute delta."""
+        gains = sorted(
+            (b for b in state_diff.balance_changes if b.is_gain),
+            key=lambda b: -b.delta,
+        )[: self._MAX_BALANCE_GAINS]
+        losses = sorted(
+            (b for b in state_diff.balance_changes if not b.is_gain and b.delta != 0),
+            key=lambda b: b.delta,
+        )[: self._MAX_BALANCE_LOSSES]
+        return gains, losses
+
+    @staticmethod
+    def _short_addr(addr: str) -> str:
+        if not addr:
+            return "?"
+        a = addr.lower()
+        if len(a) <= 12:
+            return a
+        return f"{a[:8]}…{a[-4:]}"
+
+    @staticmethod
+    def _short_token(token: str) -> str:
+        if not token or token == "ETH":
+            return token or "?"
+        # Token contract addresses get the same short treatment as addresses
+        return BlastRadiusAnalyzer._short_addr(token)
+
+    @staticmethod
+    def _compact_value(value: Any) -> str:
+        s = str(value)
+        if len(s) > 24:
+            return s[:10] + "…" + s[-6:]
+        return s
 
     def _parse_llm_response(
         self, response: str

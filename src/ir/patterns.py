@@ -9,12 +9,32 @@ from src.acquisition.trace_fetcher import TraceFrame
 from src.ir.nodes import ActionType, SemanticAction
 
 KNOWN_SELECTORS = {
+    # ERC-20 transfers
     "0xa9059cbb": ("transfer", ActionType.TOKEN_TRANSFER),
     "0x23b872dd": ("transferFrom", ActionType.TOKEN_TRANSFER),
+
+    # Flash loan entrypoints
     "0xab9c4b5d": ("flashLoan", ActionType.FLASH_LOAN_BORROW),
-    "0x022c0d9f": ("swap", ActionType.DEX_SWAP),
-    "0x128acb08": ("swap", ActionType.DEX_SWAP),
     "0x5cffe9de": ("flashLoan", ActionType.FLASH_LOAN_BORROW),
+
+    # DEX swaps
+    "0x022c0d9f": ("swap", ActionType.DEX_SWAP),  # Uniswap V2
+    "0x128acb08": ("swap", ActionType.DEX_SWAP),  # Uniswap V3
+    "0x3df02124": ("exchange", ActionType.DEX_SWAP),  # Curve exchange(int128,int128,uint256,uint256)
+    "0xa6417ed6": ("exchange_underlying", ActionType.DEX_SWAP),  # Curve
+
+    # Oracle / price-feed reads. These are typically issued via STATICCALL.
+    # Treating them as ORACLE_READ lets the classifier distinguish
+    # price_oracle_manipulation from plain flash_loan_attack — without this
+    # signal, donation/oracle attacks (Cream, Harvest, bZx) look identical
+    # to a flash loan + transfer pattern.
+    "0x50d25bcd": ("latestAnswer", ActionType.ORACLE_READ),       # Chainlink V2
+    "0xfeaf968c": ("latestRoundData", ActionType.ORACLE_READ),    # Chainlink V3
+    "0x99530b06": ("pricePerShare", ActionType.ORACLE_READ),      # Yearn V2 vault
+    "0x77c7b8fc": ("getPricePerFullShare", ActionType.ORACLE_READ),  # Yearn V1 vault
+    "0x86fc88d3": ("get_virtual_price", ActionType.ORACLE_READ),  # Curve pool
+    "0xbb7b8b80": ("getPricePerShare", ActionType.ORACLE_READ),   # various 4626-like vaults
+    "0x0902f1ac": ("getReserves", ActionType.ORACLE_READ),        # Uniswap V2 pair reserves
 }
 
 
@@ -52,6 +72,8 @@ class PatternMatcher:
         """
         if frame.op == "CALL":
             return self._match_call(frame, all_frames, index, tx_from)
+        elif frame.op == "STATICCALL":
+            return self._match_staticcall(frame, all_frames, index, tx_from)
         elif frame.op == "DELEGATECALL":
             return self._match_delegatecall(frame, all_frames, index)
         elif frame.op == "SELFDESTRUCT":
@@ -213,6 +235,60 @@ class PatternMatcher:
             return out
 
         return {}
+
+    def _match_staticcall(
+        self,
+        frame: TraceFrame,
+        all_frames: list[TraceFrame],
+        index: int,
+        tx_from: str = "",
+    ) -> tuple[SemanticAction, int] | None:
+        """Match STATICCALL — read-only call, no value transfer.
+
+        Emits an action only when the selector is a known oracle/price-feed
+        read (registered in KNOWN_SELECTORS with ActionType.ORACLE_READ).
+        Other STATICCALLs (view functions, getters) are too numerous to
+        materialize in the IR without overwhelming the classifier prompt.
+        """
+        stack = frame.stack
+        if len(stack) < 6:
+            return None
+
+        # Our call-tree synthesizer emits the same 7-item layout for both
+        # CALL and STATICCALL (with value=0 for STATICCALL). Reading -2/-4/-5
+        # works for both struct-log and synthesized frames.
+        target_raw = stack[-2]
+        args_offset = _parse_stack_int(stack[-4])
+        args_length = _parse_stack_int(stack[-5])
+
+        if args_length < 4:
+            return None  # no calldata, can't have a selector
+
+        selector = self._extract_selector(frame.memory, args_offset, args_length)
+        if not selector or selector not in self._selector_map:
+            return None
+
+        name, action_type = self._selector_map[selector]
+        # Only surface STATICCALLs that map to ORACLE_READ; other types
+        # (token transfers, swaps) require state-changing CALLs anyway.
+        if action_type != ActionType.ORACLE_READ:
+            return None
+
+        target_addr = _normalize_address(target_raw)
+        caller = _resolve_caller(all_frames, index, frame.depth, tx_from)
+        action = SemanticAction(
+            action_type=action_type,
+            depth=frame.depth,
+            from_addr=caller,
+            to_addr=target_addr,
+            params={
+                "selector": selector,
+                "function": name,
+                "args_offset": args_offset,
+                "args_length": args_length,
+            },
+        )
+        return action, 1
 
     def _match_delegatecall(
         self,
