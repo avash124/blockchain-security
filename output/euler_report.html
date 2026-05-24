@@ -54,6 +54,22 @@
             font-weight: 700;
             font-size: 1.05rem;
         }
+
+        /* Blast radius */
+        .risk-high   { color: #e74c3c; font-weight: 700; }
+        .risk-medium { color: #f39c12; font-weight: 600; }
+        .risk-low    { color: #27ae60; }
+        #blast-radius .primary-loss {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #e74c3c;
+            margin-bottom: 1.2rem;
+        }
+        #blast-radius ul {
+            padding-left: 1.2rem;
+            margin: 0.4rem 0 0;
+        }
+        #blast-radius ul li { margin-bottom: 0.3rem; }
     </style>
 </head>
 <body>
@@ -1564,6 +1580,103 @@ graph TD
                 
             </tbody>
         </table>
+    </section>
+    
+
+    
+    <section id="blast-radius">
+        <h3>Blast Radius</h3>
+        <div class="primary-loss">
+            Total Estimated Loss: $8,904,507.35
+        </div>
+
+        
+        <h4>Affected Protocols</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Protocol</th>
+                    <th>Address</th>
+                    <th>Relationship</th>
+                    <th>Risk</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                <tr>
+                    <td><strong>Aave</strong></td>
+                    <td><code>0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9</code></td>
+                    <td>Flash loan provider</td>
+                    <td class="risk-medium">MEDIUM</td>
+                    <td></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>Compound</strong></td>
+                    <td><code>0x3f87b818f94f3cc21e47fd3bf015e8d8183a3e08</code></td>
+                    <td>Shared liquidity pool</td>
+                    <td class="risk-medium">MEDIUM</td>
+                    <td></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>Uniswap</strong></td>
+                    <td><code>0x5f259d0b76665c337c6104145894f4d1d2758b8c</code></td>
+                    <td>Potential liquidity pool manipulation</td>
+                    <td class="risk-medium">MEDIUM</td>
+                    <td></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>MakerDAO</strong></td>
+                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
+                    <td>DAI token involved</td>
+                    <td class="risk-high">HIGH</td>
+                    <td></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>Balancer</strong></td>
+                    <td><code>0x028171bca77440897b824ca71d1c56cac55b68a3</code></td>
+                    <td>Shared liquidity pool</td>
+                    <td class="risk-medium">MEDIUM</td>
+                    <td></td>
+                </tr>
+                
+            </tbody>
+        </table>
+        
+
+        
+        <h4>Cascading Risks</h4>
+        <ul>
+            
+            <li>Estimated cascading token losses: $8,904,507.35 USD</li>
+            
+            <li>Oracle manipulation affecting price feeds</li>
+            
+            <li>Liquidity pool imbalances leading to further arbitrage opportunities</li>
+            
+            <li>Potential governance token devaluation due to loss of trust</li>
+            
+        </ul>
+        
+
+        
+        <h4>Recommendations</h4>
+        <ul>
+            
+            <li>Conduct a thorough audit of all affected contracts and dependencies.</li>
+            
+            <li>Implement additional monitoring and alerting for unusual activities in shared liquidity pools.</li>
+            
+            <li>Consider pausing or limiting certain functionalities in affected protocols to prevent further exploitation.</li>
+            
+            <li>Engage with the community and stakeholders to communicate the impact and planned mitigations.</li>
+            
+        </ul>
+        
     </section>
     
 

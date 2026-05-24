@@ -11,7 +11,6 @@ target_contracts:
   - name: "Beanstalk Diamond"
     address: "0xC1E088fC1323b20BCBee9bd1B9fC9546d5564493"
 
-exploit_technique: "governance_manipulation"
 estimated_loss_usd: 182_000_000
 
 tags:

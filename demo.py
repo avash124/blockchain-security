@@ -5,12 +5,14 @@ from __future__ import annotations
 import logging
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
+from src.ir.visualizer import IRVisualizer
 from src.orchestrator import ForensicPipeline, PipelineConfig
 
 
@@ -47,11 +49,45 @@ def main():
     pipeline = ForensicPipeline(config)
     verdict = pipeline.run(scenario_name)
 
+    # Render the Mermaid forensic diagram (forensic flowchart + sequence
+    # diagram + security findings) into a NEW standalone markdown file under
+    # docs/ on every run — name includes scenario + timestamp so runs don't
+    # overwrite each other.
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    diagram_filename = f"diagram_{scenario_name}_{timestamp}.md"
+    diagram_path = IRVisualizer().export_to_markdown(
+        graph=pipeline.last_ir_graph,
+        output_dir=Path(__file__).parent / "docs",
+        scenario_config=pipeline.last_scenario_config,
+        frame_count=len(pipeline.last_trace.frames),
+        filename=diagram_filename,
+        blast_radius=pipeline.last_blast_radius,
+    )
+
+    blast = pipeline.last_blast_radius
+
     print(f"\n{'='*60}")
     print(f"Scenario:   {scenario_name}")
     print(f"Verdict:    {verdict.verdict.value}")
     print(f"Confidence: {verdict.confidence:.1%}")
     print(f"Technique:  {verdict.technique}")
+    print(f"Diagram:    {diagram_path}")
+    print(f"{'='*60}")
+
+    print("\nBlast Radius")
+    print(f"  Primary loss:        ${blast.primary_loss_usd:,.2f}")
+    print(f"  Affected protocols:  {len(blast.affected_protocols)}")
+    for ap in blast.affected_protocols:
+        addr = f" [{ap.address}]" if ap.address else ""
+        print(f"    - [{ap.risk_level:>6}] {ap.name}{addr} — {ap.relationship}")
+    if blast.cascading_risks:
+        print("  Cascading risks:")
+        for risk in blast.cascading_risks:
+            print(f"    - {risk}")
+    if blast.recommendations:
+        print("  Recommendations:")
+        for rec in blast.recommendations:
+            print(f"    - {rec}")
     print(f"{'='*60}")
 
 

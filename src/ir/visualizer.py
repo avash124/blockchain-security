@@ -329,14 +329,29 @@ class IRVisualizer:
         output_dir: str | Path = "docs",
         scenario_config: dict[str, Any] | None = None,
         frame_count: int | None = None,
+        filename: str | None = None,
+        blast_radius: Any | None = None,
     ) -> Path:
-        """Generate all diagrams and write them to a markdown file in output_dir."""
+        """Generate all diagrams and write them to a markdown file in output_dir.
+
+        If ``filename`` is provided, it is used verbatim (relative to
+        ``output_dir``); otherwise a stable name derived from the tx_hash is
+        used and any previous file at that path is overwritten. Pass a
+        timestamped ``filename`` to produce a fresh artifact on every run.
+
+        If ``blast_radius`` (a ``BlastRadiusReport``) is provided, its primary
+        loss, affected protocols, cascading risks, and recommendations are
+        rendered as a dedicated section in the markdown.
+        """
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
         tx_short = graph.tx_hash[:10] + "..." + graph.tx_hash[-4:] if len(graph.tx_hash) > 16 else graph.tx_hash
-        safe_name = graph.tx_hash[:16].replace("0x", "").lower()
-        out_path = output_dir / f"diagram_{safe_name}.md"
+        if filename:
+            out_path = output_dir / filename
+        else:
+            safe_name = graph.tx_hash[:16].replace("0x", "").lower()
+            out_path = output_dir / f"diagram_{safe_name}.md"
 
         forensic = self.to_forensic_flowchart(graph, scenario_config)
         sequence = self.to_mermaid_sequence(graph)
@@ -382,6 +397,39 @@ class IRVisualizer:
             for f in fixes:
                 lines.append(f"| {f['vuln']} | {f['fix']} |")
             lines.append("")
+
+        if blast_radius is not None:
+            lines.append("## Blast Radius\n")
+            primary_loss = getattr(blast_radius, "primary_loss_usd", 0.0) or 0.0
+            lines.append(f"- **Primary loss:** ${primary_loss:,.2f} USD\n")
+
+            affected = getattr(blast_radius, "affected_protocols", []) or []
+            if affected:
+                lines.append("### Affected Protocols\n")
+                lines.append("| Risk | Protocol | Address | Relationship | Details |")
+                lines.append("|------|----------|---------|--------------|---------|")
+                for ap in affected:
+                    addr = f"`{ap.address}`" if getattr(ap, "address", "") else ""
+                    details = getattr(ap, "details", "") or ""
+                    lines.append(
+                        f"| {ap.risk_level} | {ap.name} | {addr} | "
+                        f"{ap.relationship} | {details} |"
+                    )
+                lines.append("")
+
+            cascading = getattr(blast_radius, "cascading_risks", []) or []
+            if cascading:
+                lines.append("### Cascading Risks\n")
+                for risk in cascading:
+                    lines.append(f"- {risk}")
+                lines.append("")
+
+            recs = getattr(blast_radius, "recommendations", []) or []
+            if recs:
+                lines.append("### Recommendations\n")
+                for rec in recs:
+                    lines.append(f"- {rec}")
+                lines.append("")
 
         out_path.write_text("\n".join(lines))
         return out_path
