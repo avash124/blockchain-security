@@ -1,6 +1,6 @@
-# BigChain — Blockchain Forensics & Security Analysis Pipeline
+# WireBlock — Blockchain Forensics & Security Analysis Pipeline
 
-BigChain is a production-grade forensic analysis pipeline for detecting, classifying, and verifying cryptocurrency exploit transactions on Ethereum. Given a transaction hash and a fork block, it orchestrates a full end-to-end investigation: tracing EVM execution, lifting opcodes to semantic actions, classifying the attack technique via agentic reasoning, verifying findings through deterministic predicates and counterfactual ablation, and rendering an interactive HTML forensic report.
+WireBlock is a production-grade forensic analysis pipeline for detecting, classifying, and verifying cryptocurrency exploit transactions on Ethereum. Given a transaction hash and a fork block, it orchestrates a full end-to-end investigation: tracing EVM execution, lifting opcodes to semantic actions, classifying the attack technique via agentic reasoning, verifying findings through deterministic predicates and counterfactual ablation, and rendering an interactive HTML forensic report.
 
 ---
 
@@ -174,13 +174,13 @@ bigchain/
 |   |   +-- visualizer.py           # Mermaid diagram generator + fix suggestions
 |   |
 |   +-- agents/
-|   |   +-- classifier.py           # Claude-powered exploit technique classifier
+|   |   +-- classifier.py           # OpenAI-powered exploit technique classifier
 |   |   +-- blast_radius.py         # Impact scope and cascading loss analyzer
 |   |   +-- precursor.py            # Attacker preparation and funding source analysis
 |   |
 |   +-- llm/
 |   |   +-- client.py               # Connects with OpenAI with retry logic
-|   |   +-- prompts.py              # System prompts for each agent
+|   |   +-- prompts.py              # System prompts
 |   |
 |   +-- verifier/
 |   |   +-- predicates.py           # Deterministic predicate engine (10+ checks)
@@ -331,7 +331,7 @@ class VerdictReport:
 - Docker (for `docker-compose` services)
 - An Ethereum archive node RPC URL (e.g., Alchemy, Infura — archive access required)
 - An Etherscan API key
-- An Anthropic API key
+- An OpenAI API key
 
 ### Install Python Dependencies
 
@@ -353,8 +353,8 @@ ETHER_SCAN_KEY=YOUR_ETHERSCAN_KEY
 ANTHROPIC_API_KEY=YOUR_ANTHROPIC_KEY
 OPENAI_API_KEY=YOUR_OPENAI_KEY
 
-POSTGRES_USER=bigchain
-POSTGRES_PASSWORD=bigchain
+POSTGRES_USER=WireBlock
+POSTGRES_PASSWORD=WireBlock
 POSTGRES_DB=traces
 ANVIL_PORT=8545
 ```
