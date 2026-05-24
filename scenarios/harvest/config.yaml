@@ -13,7 +13,7 @@ target_contracts:
   - name: "Curve Y Pool"
     address: "0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51"
 
-exploit_technique: "price_oracle_manipulation"
+
 estimated_loss_usd: 34_000_000
 
 tokens:

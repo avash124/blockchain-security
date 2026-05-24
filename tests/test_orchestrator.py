@@ -286,6 +286,13 @@ def fresh_pipeline(tmp_path):
 
     pipeline._reporter = MagicMock(spec=ReportRenderer)
 
+    # Mock blast-radius analysis so run() doesn't try to hit the real LLM.
+    from src.agents.blast_radius import BlastRadiusReport
+    pipeline._blast_radius = MagicMock(spec=BlastRadiusAnalyzer)
+    pipeline._blast_radius.analyze.return_value = BlastRadiusReport(
+        primary_loss_usd=0.0,
+    )
+
     ids = {
         "attacker": attacker,
         "victim": victim,

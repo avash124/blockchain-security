@@ -279,6 +279,15 @@ class ForensicPipeline:
             blast_radius=blast_radius_report,
         )
 
+        # Expose the run's intermediate artifacts so callers (e.g. demo.py)
+        # can render diagrams or inspect the IR/state-diff/blast-radius
+        # without having to re-run the expensive RPC-bound steps.
+        self.last_trace = trace
+        self.last_ir_graph = ir_graph
+        self.last_state_diff = state_diff
+        self.last_scenario_config = scenario_config
+        self.last_blast_radius = blast_radius_report
+
         return verdict
 
     def _load_scenario(self, name: str) -> dict[str, Any]:

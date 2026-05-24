@@ -13,7 +13,7 @@ target_contracts:
   - name: "eDAI"
     address: "0xe025E3ca2bE02316033184551D4d3Aa22c860fDA"
 
-exploit_technique: "donation_attack"
+
 estimated_loss_usd: 197_000_000
 
 tokens:

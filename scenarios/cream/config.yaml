@@ -1,0 +1,24 @@
+scenario: cream
+name: "Cream Finance Oct-2021 Exploit"
+date: "2021-10-27"
+
+chain: mainnet
+tx_hash: "0x0fe2542079644e107cbf13690eb9c2c65963ccb79089ff96bfaf8dced2331c92"
+fork_block: 13499798
+attacker_address: "0x24354D31bC9D90F62FE5f2454709C32049cf866b"
+
+target_contracts:
+  - name: "Cream Finance Comptroller (proxy)"
+    address: "0x3d5BC3c8d13dcB8bF317092d84783c2697AE9258"
+
+
+estimated_loss_usd: 130_000_000
+
+tokens:
+  - "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"  # USDC
+  - "0x6B175474E89094C44Da98b954EedeAC495271d0F"  # DAI
+
+tags:
+  - flash_loan
+  - price_oracle_manipulation
+  - donation

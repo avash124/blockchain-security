@@ -329,14 +329,24 @@ class IRVisualizer:
         output_dir: str | Path = "docs",
         scenario_config: dict[str, Any] | None = None,
         frame_count: int | None = None,
+        filename: str | None = None,
     ) -> Path:
-        """Generate all diagrams and write them to a markdown file in output_dir."""
+        """Generate all diagrams and write them to a markdown file in output_dir.
+
+        If ``filename`` is provided, it is used verbatim (relative to
+        ``output_dir``); otherwise a stable name derived from the tx_hash is
+        used and any previous file at that path is overwritten. Pass a
+        timestamped ``filename`` to produce a fresh artifact on every run.
+        """
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
         tx_short = graph.tx_hash[:10] + "..." + graph.tx_hash[-4:] if len(graph.tx_hash) > 16 else graph.tx_hash
-        safe_name = graph.tx_hash[:16].replace("0x", "").lower()
-        out_path = output_dir / f"diagram_{safe_name}.md"
+        if filename:
+            out_path = output_dir / filename
+        else:
+            safe_name = graph.tx_hash[:16].replace("0x", "").lower()
+            out_path = output_dir / f"diagram_{safe_name}.md"
 
         forensic = self.to_forensic_flowchart(graph, scenario_config)
         sequence = self.to_mermaid_sequence(graph)

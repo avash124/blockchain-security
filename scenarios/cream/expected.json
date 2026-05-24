@@ -1,0 +1,49 @@
+{
+  "scenario": "cream",
+  "verdict": "VERIFIED",
+  "technique": "price_oracle_manipulation",
+  "confidence": 0.80,
+  "notes": "Cream Finance Oct-27-2021. Attacker flash-borrowed ~$1.5B of DAI/ETH, minted yUSD (yvDAI vault shares), then donated DAI directly into the underlying Curve y-pool to spike yvDAI.pricePerShare. Cream priced yUSD collateral off that inflated per-share value and let the attacker borrow out every remaining asset (USDC, USDT, ETH, WBTC, etc.). Either price_oracle_manipulation OR donation_attack is a valid classification — the donation is the MEANS, the inflated oracle reading is the EXPLOITED PRIMITIVE.",
+  "causal_factors": [
+    {
+      "factor": "flash_loan_acquisition",
+      "description": "Borrows ~500M DAI from MakerDAO + additional capital from Aave/dYdX to fund the donation",
+      "token": "DAI",
+      "verified": true
+    },
+    {
+      "factor": "yusd_minting",
+      "description": "Deposits DAI into Yearn yvDAI vault to obtain yUSD shares used as Cream collateral",
+      "verified": true
+    },
+    {
+      "factor": "curve_pool_donation",
+      "description": "Transfers DAI directly into the Curve y-pool (outside the deposit flow) so yvDAI.pricePerShare doubles",
+      "verified": true
+    },
+    {
+      "factor": "borrow_against_inflated_collateral",
+      "description": "Borrows USDC/USDT/ETH/WBTC from Cream against the now-2x-valued yUSD position, draining the markets",
+      "verified": true
+    }
+  ],
+  "state_diff": {
+    "attacker_address": "0x24354D31bC9D90F62FE5f2454709C32049cf866b",
+    "attack_contract":  "0x961d2b694d9097f35cfffa363ef98823928a330d",
+    "protocol_loss_usd": 130000000,
+    "tx_status": "success"
+  },
+  "what_to_look_for": {
+    "demo_output": {
+      "Verdict":    "VERIFIED",
+      "Technique":  "price_oracle_manipulation or donation_attack",
+      "Confidence": "≈ 0.80 (with skip_ablation=True; higher when ablation runs)"
+    },
+    "blast_radius": [
+      "Affected protocols: at minimum the Cream Finance Comptroller (lender of last resort drained); cascading risk on Yearn yvDAI and Curve y-pool depositors",
+      "Cascading risks: $130M USD of borrowed tokens left Cream — USDC, USDT, DAI, ETH, WBTC market liquidity dropped to ~0",
+      "Recommendations: oracle should not use single-source pricePerShare; protect against direct token donations via TWAP or burn-tracked share accounting"
+    ],
+    "diagram_md": "docs/diagram_cream_<timestamp>.md should show: 1 flash_loan_borrow, multiple token_transfer actions with the Curve y-pool address as recipient (the donation), and follow-on token_transfers FROM Cream contracts TO the attacker contract"
+  }
+}
