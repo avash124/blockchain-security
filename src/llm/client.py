@@ -29,9 +29,7 @@ class LLMResponse:
 class LLMClient:
     """Wrapper around the OpenAI API with retry logic and structured output."""
 
-    # Default model resolution order: explicit `model` arg > OPENAI_MODEL env > DEFAULT_MODEL.
-    # Override per-run with `OPENAI_MODEL=gpt-4o python demo.py ...` for A/B comparisons.
-    DEFAULT_MODEL = "gpt-5.1"
+    DEFAULT_MODEL = "gpt-4o"
     MAX_RETRIES = 3
     RETRY_DELAY = 1.0
 
@@ -42,7 +40,7 @@ class LLMClient:
         max_tokens: int = 4096,
     ):
         self._api_key = api_key or os.getenv("OPENAI_API_KEY", "")
-        self._model = model or os.getenv("OPENAI_MODEL") or self.DEFAULT_MODEL
+        self._model = model or self.DEFAULT_MODEL
         self._max_tokens = max_tokens
         self._client = None  # lazy init
 
@@ -54,12 +52,6 @@ class LLMClient:
             except ImportError:
                 raise RuntimeError("Install openai: pip install openai")
         return self._client
-
-    def _uses_max_completion_tokens(self) -> bool:
-        """Newer OpenAI families (gpt-5.x, o-series) require max_completion_tokens
-        instead of max_tokens and reject custom temperature values."""
-        m = self._model.lower()
-        return m.startswith(("gpt-5", "o1", "o3", "o4"))
 
     def complete(
         self,
@@ -73,19 +65,13 @@ class LLMClient:
 
         kwargs: dict[str, Any] = {
             "model": self._model,
+            "max_tokens": self._max_tokens,
+            "temperature": temperature,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message},
             ],
         }
-
-        if self._uses_max_completion_tokens():
-            # gpt-5.x / o-series: new param name, and temperature is fixed at 1.
-            kwargs["max_completion_tokens"] = self._max_tokens
-        else:
-            kwargs["max_tokens"] = self._max_tokens
-            kwargs["temperature"] = temperature
-
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
 

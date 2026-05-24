@@ -40,39 +40,17 @@ clearly attacker-controlled (e.g. a newly-deployed contract in the same tx):
 
   1. governance_attack       — governance_action present.
   2. self_destruct_exploit   — self_destruct present.
-  3. price_oracle_manipulation — oracle_read (Chainlink latestAnswer/
-                                  latestRoundData, Yearn pricePerShare /
-                                  getPricePerFullShare, Curve get_virtual_price,
-                                  Uniswap getReserves) used by a lending or
-                                  derivatives protocol to price collateral,
-                                  where the value behind that oracle is moved
-                                  WITHIN THE SAME TX by EITHER:
-                                    (a) a large dex_swap moving spot price, OR
-                                    (b) a large token_transfer DIRECTLY INTO
-                                        the priced vault/pool (a donation that
-                                        inflates pricePerShare or get_virtual_price).
-                                  Cream-Oct-2021 (donate DAI to Curve y-pool →
-                                  yvDAI.pricePerShare doubles → borrow against
-                                  inflated yUSD collateral) and Harvest-Oct-2020
-                                  (manipulate Curve y-pool virtual price → drain
-                                  fUSDT/fUSDC vaults) are canonical examples.
-                                  This category WINS over donation_attack
-                                  whenever the captured value comes from an
-                                  inflated oracle reading rather than from a
-                                  direct redemption of the donated shares.
+  3. price_oracle_manipulation — oracle_read close to a large dex_swap that
+                                  moves the spot price the oracle uses.
   4. donation_attack         — token_transfer(s) DIRECTLY INTO a pool/vault
                                 outside the deposit flow, followed by a
                                 liquidation, withdrawal, or inflated redemption
-                                IN THE SAME PROTOCOL that captures the donated
-                                value WITHOUT going through an oracle (i.e.
-                                no oracle_read sandwiched between the donation
-                                and the redemption — that's case 3 instead).
-                                The Euler-March-2023 exploit (flash-borrow →
-                                donate to depleted account → self-liquidate to
-                                mint bad debt) is the canonical case — note
-                                that a flash loan funding the donation does
-                                NOT make it a flash_loan_attack; the MECHANISM
-                                is donation.
+                                that captures the donated value. The
+                                Euler-March-2023 exploit (flash-borrow → donate
+                                to depleted account → self-liquidate to mint bad
+                                debt) is the canonical case — note that a flash
+                                loan funding the donation does NOT make it a
+                                flash_loan_attack; the MECHANISM is donation.
   5. sandwich_attack         — dex_swap, dex_swap pattern bracketing a victim swap.
   6. flash_loan_attack       — flash_loan_borrow + dex_swap that itself moves
                                 spot price for arb profit (the loan + swap is
