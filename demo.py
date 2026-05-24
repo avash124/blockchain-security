@@ -61,6 +61,7 @@ def main():
         scenario_config=pipeline.last_scenario_config,
         frame_count=len(pipeline.last_trace.frames),
         filename=diagram_filename,
+        blast_radius=pipeline.last_blast_radius,
     )
 
     blast = pipeline.last_blast_radius

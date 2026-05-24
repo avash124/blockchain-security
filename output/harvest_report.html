@@ -1239,7 +1239,7 @@ graph TD
                 <tr class="predicate-pass">
                     <td>balance_increased</td>
                     <td>PASS</td>
-                    <td>Attacker gained on 2 asset(s): 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48, ETH</td>
+                    <td>Attacker gained on 2 asset(s): ETH, 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48</td>
                 </tr>
                 
                 <tr class="predicate-pass">
@@ -5768,7 +5768,7 @@ graph TD
                 <tr>
                     <td><strong>Uniswap V2</strong></td>
                     <td><code>0x0d4a11d5eeaac28ec3f61d100daf4d40471f1852</code></td>
-                    <td>Used for dex swaps in the exploit</td>
+                    <td>Used for price manipulation via swaps</td>
                     <td class="risk-medium">MEDIUM</td>
                     <td></td>
                 </tr>
@@ -5776,7 +5776,7 @@ graph TD
                 <tr>
                     <td><strong>Compound</strong></td>
                     <td><code>0x39aa39c021dfbae8fac545936693ac917d5e7563</code></td>
-                    <td>Shared dependency through token interactions</td>
+                    <td>Shared liquidity and potential collateral impact</td>
                     <td class="risk-medium">MEDIUM</td>
                     <td></td>
                 </tr>
@@ -5798,17 +5798,9 @@ graph TD
                 </tr>
                 
                 <tr>
-                    <td><strong>Balancer</strong></td>
-                    <td><code>0x398ec7346dcd622edc5ae82352f02be94c62d119</code></td>
-                    <td>Shared dependency through token interactions</td>
-                    <td class="risk-medium">MEDIUM</td>
-                    <td></td>
-                </tr>
-                
-                <tr>
-                    <td><strong>Aave</strong></td>
-                    <td><code>0x7d2b9e6f3e1e0f3f5e1e0f3f5e1e0f3f5e1e0f3f</code></td>
-                    <td>Potential collateral impact</td>
+                    <td><strong>WETH</strong></td>
+                    <td><code>0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2</code></td>
+                    <td>Token used in exploit</td>
                     <td class="risk-medium">MEDIUM</td>
                     <td></td>
                 </tr>
@@ -5821,11 +5813,11 @@ graph TD
         <h4>Cascading Risks</h4>
         <ul>
             
-            <li>Oracle manipulation affecting price feeds used by other protocols</li>
+            <li>Price manipulation in Curve Y Pool affecting other protocols using the same pool for price feeds.</li>
             
-            <li>Liquidity drain from shared pools impacting other protocols&#39; operations</li>
+            <li>Potential liquidity drain from protocols sharing liquidity with Harvest Finance and Curve Y Pool.</li>
             
-            <li>Potential devaluation of governance tokens due to loss of trust</li>
+            <li>Collateral value fluctuations in Compound due to manipulated asset prices.</li>
             
         </ul>
         
@@ -5834,15 +5826,13 @@ graph TD
         <h4>Recommendations</h4>
         <ul>
             
-            <li>Harvest Finance should immediately pause operations and investigate the exploit.</li>
+            <li>Harvest Finance should pause operations and investigate the exploit to prevent further losses.</li>
             
-            <li>Curve should assess the impact on their liquidity pools and consider pausing affected pools.</li>
+            <li>Protocols using Curve Y Pool for price feeds should consider switching to alternative oracles temporarily.</li>
             
-            <li>Protocols using USDC and USDT should monitor for unusual activity and consider additional security measures.</li>
+            <li>Compound and other lending platforms should assess collateral health and consider increasing collateral requirements for affected assets.</li>
             
-            <li>All affected protocols should communicate with their communities to maintain transparency and trust.</li>
-            
-            <li>Consider implementing additional oracle security measures to prevent future manipulation.</li>
+            <li>All affected protocols should communicate with their communities about the exploit and potential impacts.</li>
             
         </ul>
         
