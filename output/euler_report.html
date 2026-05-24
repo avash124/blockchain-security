@@ -88,7 +88,7 @@
     <section id="summary">
         <h3>Executive Summary</h3>
         <table>
-            <tr><td>Technique</td><td><strong>donation_attack</strong></td></tr>
+            <tr><td>Technique</td><td><strong>flash_loan_attack</strong></td></tr>
             <tr><td>Transaction</td><td><code>0xc310a0affe2169d1f6feec1c63dbc7f7c62a887fa48795d327d4d2da2d6b111d</code></td></tr>
             <tr><td>Attacker</td><td><code>0xeBC29199C817Dc47BA12E3F86102564D640539d4</code></td></tr>
             <tr>
@@ -105,283 +105,97 @@
         <h3>Exploit Flow Diagram</h3>
         <div class="mermaid">
 graph TD
-    flash_loan_borrow_1783[&#34;⚡ Flash Loan Borrow&#34;]
-    delegate_call_1880[&#34;📞 Delegate Call&#34;]
-    delegate_call_3181[&#34;📞 Delegate Call&#34;]
-    token_transfer_3543[&#34;💸 Token Transfer\n30000000000000000000000000&#34;]
-    storage_write_3735[&#34;✍ Storage Write&#34;]
-    storage_write_3800[&#34;✍ Storage Write&#34;]
-    storage_write_5298[&#34;✍ Storage Write&#34;]
-    storage_write_5535[&#34;✍ Storage Write&#34;]
-    token_transfer_5615[&#34;💸 Token Transfer\n30000000000000000000000000&#34;]
-    storage_write_5807[&#34;✍ Storage Write&#34;]
-    storage_write_5872[&#34;✍ Storage Write&#34;]
-    storage_write_7321[&#34;✍ Storage Write&#34;]
-    delegate_call_7968[&#34;📞 Delegate Call&#34;]
-    storage_write_8060[&#34;✍ Storage Write&#34;]
-    storage_write_10248[&#34;✍ Storage Write&#34;]
-    storage_write_10267[&#34;✍ Storage Write&#34;]
-    storage_write_10288[&#34;✍ Storage Write&#34;]
-    storage_write_10296[&#34;✍ Storage Write&#34;]
-    token_transfer_10590[&#34;💸 Token Transfer\n20000000000000000000000000&#34;]
-    storage_write_10842[&#34;✍ Storage Write&#34;]
-    storage_write_10907[&#34;✍ Storage Write&#34;]
-    storage_write_11840[&#34;✍ Storage Write&#34;]
-    storage_write_11902[&#34;✍ Storage Write&#34;]
-    delegate_call_12275[&#34;📞 Delegate Call&#34;]
-    storage_write_12654[&#34;✍ Storage Write&#34;]
-    storage_write_13194[&#34;✍ Storage Write&#34;]
-    delegate_call_13727[&#34;📞 Delegate Call&#34;]
-    storage_write_13821[&#34;✍ Storage Write&#34;]
-    storage_write_15207[&#34;✍ Storage Write&#34;]
-    storage_write_15269[&#34;✍ Storage Write&#34;]
-    delegate_call_15642[&#34;📞 Delegate Call&#34;]
-    storage_write_16021[&#34;✍ Storage Write&#34;]
-    storage_write_16585[&#34;✍ Storage Write&#34;]
-    storage_write_16595[&#34;✍ Storage Write&#34;]
-    storage_write_16678[&#34;✍ Storage Write&#34;]
-    storage_write_16729[&#34;✍ Storage Write&#34;]
-    storage_write_16821[&#34;✍ Storage Write&#34;]
-    storage_write_16888[&#34;✍ Storage Write&#34;]
-    delegate_call_17261[&#34;📞 Delegate Call&#34;]
-    storage_write_17703[&#34;✍ Storage Write&#34;]
-    delegate_call_18470[&#34;📞 Delegate Call&#34;]
-    storage_write_21661[&#34;✍ Storage Write&#34;]
-    delegate_call_22208[&#34;📞 Delegate Call&#34;]
-    storage_write_22305[&#34;✍ Storage Write&#34;]
-    token_transfer_23653[&#34;💸 Token Transfer\n10000000000000000000000000&#34;]
-    storage_write_23905[&#34;✍ Storage Write&#34;]
-    storage_write_23970[&#34;✍ Storage Write&#34;]
-    storage_write_24807[&#34;✍ Storage Write&#34;]
-    storage_write_24817[&#34;✍ Storage Write&#34;]
-    storage_write_24935[&#34;✍ Storage Write&#34;]
-    storage_write_25023[&#34;✍ Storage Write&#34;]
-    delegate_call_25396[&#34;📞 Delegate Call&#34;]
-    storage_write_25838[&#34;✍ Storage Write&#34;]
-    storage_write_26556[&#34;✍ Storage Write&#34;]
-    delegate_call_27081[&#34;📞 Delegate Call&#34;]
-    storage_write_27175[&#34;✍ Storage Write&#34;]
-    storage_write_28561[&#34;✍ Storage Write&#34;]
-    storage_write_28623[&#34;✍ Storage Write&#34;]
-    delegate_call_28996[&#34;📞 Delegate Call&#34;]
-    storage_write_29438[&#34;✍ Storage Write&#34;]
-    storage_write_30062[&#34;✍ Storage Write&#34;]
-    storage_write_30072[&#34;✍ Storage Write&#34;]
-    storage_write_30155[&#34;✍ Storage Write&#34;]
-    storage_write_30222[&#34;✍ Storage Write&#34;]
-    delegate_call_30595[&#34;📞 Delegate Call&#34;]
-    storage_write_31037[&#34;✍ Storage Write&#34;]
-    delegate_call_31821[&#34;📞 Delegate Call&#34;]
-    storage_write_35012[&#34;✍ Storage Write&#34;]
-    delegate_call_35311[&#34;📞 Delegate Call&#34;]
-    storage_write_35410[&#34;✍ Storage Write&#34;]
-    storage_write_36341[&#34;✍ Storage Write&#34;]
-    storage_write_36409[&#34;✍ Storage Write&#34;]
-    storage_write_36921[&#34;✍ Storage Write&#34;]
-    delegate_call_37585[&#34;📞 Delegate Call&#34;]
-    storage_write_37793[&#34;✍ Storage Write&#34;]
-    delegate_call_38284[&#34;📞 Delegate Call&#34;]
-    delegate_call_40339[&#34;📞 Delegate Call&#34;]
-    delegate_call_43889[&#34;📞 Delegate Call&#34;]
-    storage_write_48343[&#34;✍ Storage Write&#34;]
-    delegate_call_48820[&#34;📞 Delegate Call&#34;]
-    storage_write_48982[&#34;✍ Storage Write&#34;]
-    delegate_call_49603[&#34;📞 Delegate Call&#34;]
-    delegate_call_51658[&#34;📞 Delegate Call&#34;]
-    delegate_call_55208[&#34;📞 Delegate Call&#34;]
-    storage_write_60677[&#34;✍ Storage Write&#34;]
-    storage_write_60687[&#34;✍ Storage Write&#34;]
-    storage_write_60805[&#34;✍ Storage Write&#34;]
-    storage_write_60815[&#34;✍ Storage Write&#34;]
-    storage_write_60898[&#34;✍ Storage Write&#34;]
-    storage_write_60949[&#34;✍ Storage Write&#34;]
-    storage_write_61076[&#34;✍ Storage Write&#34;]
-    storage_write_61127[&#34;✍ Storage Write&#34;]
-    storage_write_62483[&#34;✍ Storage Write&#34;]
-    storage_write_62493[&#34;✍ Storage Write&#34;]
-    storage_write_62576[&#34;✍ Storage Write&#34;]
-    storage_write_62643[&#34;✍ Storage Write&#34;]
-    delegate_call_63008[&#34;📞 Delegate Call&#34;]
-    storage_write_63450[&#34;✍ Storage Write&#34;]
-    storage_write_64242[&#34;✍ Storage Write&#34;]
-    storage_write_64309[&#34;✍ Storage Write&#34;]
-    storage_write_65535[&#34;✍ Storage Write&#34;]
-    storage_write_65617[&#34;✍ Storage Write&#34;]
-    delegate_call_66347[&#34;📞 Delegate Call&#34;]
-    storage_write_69532[&#34;✍ Storage Write&#34;]
-    delegate_call_70291[&#34;📞 Delegate Call&#34;]
-    storage_write_70384[&#34;✍ Storage Write&#34;]
-    token_transfer_71754[&#34;💸 Token Transfer\n38904507348306697267428294&#34;]
-    storage_write_71946[&#34;✍ Storage Write&#34;]
-    storage_write_72011[&#34;✍ Storage Write&#34;]
-    storage_write_72745[&#34;✍ Storage Write&#34;]
-    storage_write_72806[&#34;✍ Storage Write&#34;]
-    delegate_call_73179[&#34;📞 Delegate Call&#34;]
-    storage_write_73621[&#34;✍ Storage Write&#34;]
-    delegate_call_74218[&#34;📞 Delegate Call&#34;]
-    storage_write_77409[&#34;✍ Storage Write&#34;]
-    token_transfer_77720[&#34;💸 Token Transfer\n38904507348306697267428294&#34;]
-    storage_write_77912[&#34;✍ Storage Write&#34;]
-    storage_write_77977[&#34;✍ Storage Write&#34;]
-    storage_write_78309[&#34;✍ Storage Write&#34;]
-    delegate_call_78864[&#34;📞 Delegate Call&#34;]
-    storage_write_79338[&#34;✍ Storage Write&#34;]
-    storage_write_80068[&#34;✍ Storage Write&#34;]
-    storage_write_80093[&#34;✍ Storage Write&#34;]
-    delegate_call_80362[&#34;📞 Delegate Call&#34;]
-    delegate_call_82480[&#34;📞 Delegate Call&#34;]
-    storage_write_82749[&#34;✍ Storage Write&#34;]
-    storage_write_82813[&#34;✍ Storage Write&#34;]
-    delegate_call_82984[&#34;📞 Delegate Call&#34;]
-    storage_write_83292[&#34;✍ Storage Write&#34;]
-    delegate_call_83619[&#34;📞 Delegate Call&#34;]
-    delegate_call_83844[&#34;📞 Delegate Call&#34;]
-    storage_write_84604[&#34;✍ Storage Write&#34;]
-    delegate_call_84856[&#34;📞 Delegate Call&#34;]
-    delegate_call_85858[&#34;📞 Delegate Call&#34;]
-    storage_write_88522[&#34;✍ Storage Write&#34;]
-    storage_write_88549[&#34;✍ Storage Write&#34;]
-    token_transfer_88950[&#34;💸 Token Transfer\n30027000000000000000000000&#34;]
-    storage_write_89202[&#34;✍ Storage Write&#34;]
-    storage_write_89267[&#34;✍ Storage Write&#34;]
-    flash_loan_borrow_1783 --&gt;|sequence| delegate_call_1880
-    delegate_call_1880 --&gt;|sequence| delegate_call_3181
-    delegate_call_3181 --&gt;|sequence| token_transfer_3543
-    token_transfer_3543 --&gt;|sequence| storage_write_3735
-    storage_write_3735 --&gt;|sequence| storage_write_3800
-    storage_write_3800 --&gt;|sequence| storage_write_5298
-    storage_write_5298 --&gt;|sequence| storage_write_5535
-    storage_write_5535 --&gt;|sequence| token_transfer_5615
-    token_transfer_5615 --&gt;|sequence| storage_write_5807
-    storage_write_5807 --&gt;|sequence| storage_write_5872
-    storage_write_5872 --&gt;|sequence| storage_write_7321
-    storage_write_7321 --&gt;|sequence| delegate_call_7968
-    delegate_call_7968 --&gt;|sequence| storage_write_8060
-    storage_write_8060 --&gt;|sequence| storage_write_10248
-    storage_write_10248 --&gt;|sequence| storage_write_10267
-    storage_write_10267 --&gt;|sequence| storage_write_10288
-    storage_write_10288 --&gt;|sequence| storage_write_10296
-    storage_write_10296 --&gt;|sequence| token_transfer_10590
-    token_transfer_10590 --&gt;|sequence| storage_write_10842
-    storage_write_10842 --&gt;|sequence| storage_write_10907
-    storage_write_10907 --&gt;|sequence| storage_write_11840
-    storage_write_11840 --&gt;|sequence| storage_write_11902
-    storage_write_11902 --&gt;|sequence| delegate_call_12275
-    delegate_call_12275 --&gt;|sequence| storage_write_12654
-    storage_write_12654 --&gt;|sequence| storage_write_13194
-    storage_write_13194 --&gt;|sequence| delegate_call_13727
-    delegate_call_13727 --&gt;|sequence| storage_write_13821
-    storage_write_13821 --&gt;|sequence| storage_write_15207
-    storage_write_15207 --&gt;|sequence| storage_write_15269
-    storage_write_15269 --&gt;|sequence| delegate_call_15642
-    delegate_call_15642 --&gt;|sequence| storage_write_16021
-    storage_write_16021 --&gt;|sequence| storage_write_16585
-    storage_write_16585 --&gt;|sequence| storage_write_16595
-    storage_write_16595 --&gt;|sequence| storage_write_16678
-    storage_write_16678 --&gt;|sequence| storage_write_16729
-    storage_write_16729 --&gt;|sequence| storage_write_16821
-    storage_write_16821 --&gt;|sequence| storage_write_16888
-    storage_write_16888 --&gt;|sequence| delegate_call_17261
-    delegate_call_17261 --&gt;|sequence| storage_write_17703
-    storage_write_17703 --&gt;|sequence| delegate_call_18470
-    delegate_call_18470 --&gt;|sequence| storage_write_21661
-    storage_write_21661 --&gt;|sequence| delegate_call_22208
-    delegate_call_22208 --&gt;|sequence| storage_write_22305
-    storage_write_22305 --&gt;|sequence| token_transfer_23653
-    token_transfer_23653 --&gt;|sequence| storage_write_23905
-    storage_write_23905 --&gt;|sequence| storage_write_23970
-    storage_write_23970 --&gt;|sequence| storage_write_24807
-    storage_write_24807 --&gt;|sequence| storage_write_24817
-    storage_write_24817 --&gt;|sequence| storage_write_24935
-    storage_write_24935 --&gt;|sequence| storage_write_25023
-    storage_write_25023 --&gt;|sequence| delegate_call_25396
-    delegate_call_25396 --&gt;|sequence| storage_write_25838
-    storage_write_25838 --&gt;|sequence| storage_write_26556
-    storage_write_26556 --&gt;|sequence| delegate_call_27081
-    delegate_call_27081 --&gt;|sequence| storage_write_27175
-    storage_write_27175 --&gt;|sequence| storage_write_28561
-    storage_write_28561 --&gt;|sequence| storage_write_28623
-    storage_write_28623 --&gt;|sequence| delegate_call_28996
-    delegate_call_28996 --&gt;|sequence| storage_write_29438
-    storage_write_29438 --&gt;|sequence| storage_write_30062
-    storage_write_30062 --&gt;|sequence| storage_write_30072
-    storage_write_30072 --&gt;|sequence| storage_write_30155
-    storage_write_30155 --&gt;|sequence| storage_write_30222
-    storage_write_30222 --&gt;|sequence| delegate_call_30595
-    delegate_call_30595 --&gt;|sequence| storage_write_31037
-    storage_write_31037 --&gt;|sequence| delegate_call_31821
-    delegate_call_31821 --&gt;|sequence| storage_write_35012
-    storage_write_35012 --&gt;|sequence| delegate_call_35311
-    delegate_call_35311 --&gt;|sequence| storage_write_35410
-    storage_write_35410 --&gt;|sequence| storage_write_36341
-    storage_write_36341 --&gt;|sequence| storage_write_36409
-    storage_write_36409 --&gt;|sequence| storage_write_36921
-    storage_write_36921 --&gt;|sequence| delegate_call_37585
-    delegate_call_37585 --&gt;|sequence| storage_write_37793
-    storage_write_37793 --&gt;|sequence| delegate_call_38284
-    delegate_call_38284 --&gt;|sequence| delegate_call_40339
-    delegate_call_40339 --&gt;|sequence| delegate_call_43889
-    delegate_call_43889 --&gt;|sequence| storage_write_48343
-    storage_write_48343 --&gt;|sequence| delegate_call_48820
-    delegate_call_48820 --&gt;|sequence| storage_write_48982
-    storage_write_48982 --&gt;|sequence| delegate_call_49603
-    delegate_call_49603 --&gt;|sequence| delegate_call_51658
-    delegate_call_51658 --&gt;|sequence| delegate_call_55208
-    delegate_call_55208 --&gt;|sequence| storage_write_60677
-    storage_write_60677 --&gt;|sequence| storage_write_60687
-    storage_write_60687 --&gt;|sequence| storage_write_60805
-    storage_write_60805 --&gt;|sequence| storage_write_60815
-    storage_write_60815 --&gt;|sequence| storage_write_60898
-    storage_write_60898 --&gt;|sequence| storage_write_60949
-    storage_write_60949 --&gt;|sequence| storage_write_61076
-    storage_write_61076 --&gt;|sequence| storage_write_61127
-    storage_write_61127 --&gt;|sequence| storage_write_62483
-    storage_write_62483 --&gt;|sequence| storage_write_62493
-    storage_write_62493 --&gt;|sequence| storage_write_62576
-    storage_write_62576 --&gt;|sequence| storage_write_62643
-    storage_write_62643 --&gt;|sequence| delegate_call_63008
-    delegate_call_63008 --&gt;|sequence| storage_write_63450
-    storage_write_63450 --&gt;|sequence| storage_write_64242
-    storage_write_64242 --&gt;|sequence| storage_write_64309
-    storage_write_64309 --&gt;|sequence| storage_write_65535
-    storage_write_65535 --&gt;|sequence| storage_write_65617
-    storage_write_65617 --&gt;|sequence| delegate_call_66347
-    delegate_call_66347 --&gt;|sequence| storage_write_69532
-    storage_write_69532 --&gt;|sequence| delegate_call_70291
-    delegate_call_70291 --&gt;|sequence| storage_write_70384
-    storage_write_70384 --&gt;|sequence| token_transfer_71754
-    token_transfer_71754 --&gt;|sequence| storage_write_71946
-    storage_write_71946 --&gt;|sequence| storage_write_72011
-    storage_write_72011 --&gt;|sequence| storage_write_72745
-    storage_write_72745 --&gt;|sequence| storage_write_72806
-    storage_write_72806 --&gt;|sequence| delegate_call_73179
-    delegate_call_73179 --&gt;|sequence| storage_write_73621
-    storage_write_73621 --&gt;|sequence| delegate_call_74218
-    delegate_call_74218 --&gt;|sequence| storage_write_77409
-    storage_write_77409 --&gt;|sequence| token_transfer_77720
-    token_transfer_77720 --&gt;|sequence| storage_write_77912
-    storage_write_77912 --&gt;|sequence| storage_write_77977
-    storage_write_77977 --&gt;|sequence| storage_write_78309
-    storage_write_78309 --&gt;|sequence| delegate_call_78864
-    delegate_call_78864 --&gt;|sequence| storage_write_79338
-    storage_write_79338 --&gt;|sequence| storage_write_80068
-    storage_write_80068 --&gt;|sequence| storage_write_80093
-    storage_write_80093 --&gt;|sequence| delegate_call_80362
-    delegate_call_80362 --&gt;|sequence| delegate_call_82480
-    delegate_call_82480 --&gt;|sequence| storage_write_82749
-    storage_write_82749 --&gt;|sequence| storage_write_82813
-    storage_write_82813 --&gt;|sequence| delegate_call_82984
-    delegate_call_82984 --&gt;|sequence| storage_write_83292
-    storage_write_83292 --&gt;|sequence| delegate_call_83619
-    delegate_call_83619 --&gt;|sequence| delegate_call_83844
-    delegate_call_83844 --&gt;|sequence| storage_write_84604
-    storage_write_84604 --&gt;|sequence| delegate_call_84856
-    delegate_call_84856 --&gt;|sequence| delegate_call_85858
-    delegate_call_85858 --&gt;|sequence| storage_write_88522
-    storage_write_88522 --&gt;|sequence| storage_write_88549
-    storage_write_88549 --&gt;|sequence| token_transfer_88950
-    token_transfer_88950 --&gt;|sequence| storage_write_89202
-    storage_write_89202 --&gt;|sequence| storage_write_89267
+    flash_loan_borrow_4[&#34;⚡ Flash Loan Borrow&#34;]
+    delegate_call_5[&#34;📞 Delegate Call&#34;]
+    delegate_call_7[&#34;📞 Delegate Call&#34;]
+    token_transfer_8[&#34;💸 Token Transfer\n30000000000000000000000000&#34;]
+    contract_deployment_11[&#34;🚀 Contract Deployment&#34;]
+    contract_deployment_12[&#34;🚀 Contract Deployment&#34;]
+    token_transfer_13[&#34;💸 Token Transfer\n30000000000000000000000000&#34;]
+    delegate_call_22[&#34;📞 Delegate Call&#34;]
+    token_transfer_24[&#34;💸 Token Transfer\n20000000000000000000000000&#34;]
+    delegate_call_26[&#34;📞 Delegate Call&#34;]
+    delegate_call_31[&#34;📞 Delegate Call&#34;]
+    delegate_call_33[&#34;📞 Delegate Call&#34;]
+    delegate_call_35[&#34;📞 Delegate Call&#34;]
+    delegate_call_37[&#34;📞 Delegate Call&#34;]
+    delegate_call_44[&#34;📞 Delegate Call&#34;]
+    token_transfer_46[&#34;💸 Token Transfer\n10000000000000000000000000&#34;]
+    delegate_call_48[&#34;📞 Delegate Call&#34;]
+    delegate_call_53[&#34;📞 Delegate Call&#34;]
+    delegate_call_55[&#34;📞 Delegate Call&#34;]
+    delegate_call_57[&#34;📞 Delegate Call&#34;]
+    delegate_call_59[&#34;📞 Delegate Call&#34;]
+    delegate_call_65[&#34;📞 Delegate Call&#34;]
+    delegate_call_71[&#34;📞 Delegate Call&#34;]
+    delegate_call_72[&#34;📞 Delegate Call&#34;]
+    delegate_call_76[&#34;📞 Delegate Call&#34;]
+    delegate_call_82[&#34;📞 Delegate Call&#34;]
+    delegate_call_88[&#34;📞 Delegate Call&#34;]
+    delegate_call_89[&#34;📞 Delegate Call&#34;]
+    delegate_call_93[&#34;📞 Delegate Call&#34;]
+    delegate_call_99[&#34;📞 Delegate Call&#34;]
+    delegate_call_106[&#34;📞 Delegate Call&#34;]
+    delegate_call_110[&#34;📞 Delegate Call&#34;]
+    delegate_call_118[&#34;📞 Delegate Call&#34;]
+    token_transfer_120[&#34;💸 Token Transfer\n38904507348306697267428294&#34;]
+    delegate_call_122[&#34;📞 Delegate Call&#34;]
+    delegate_call_124[&#34;📞 Delegate Call&#34;]
+    token_transfer_129[&#34;💸 Token Transfer\n38904507348306697267428294&#34;]
+    delegate_call_131[&#34;📞 Delegate Call&#34;]
+    delegate_call_133[&#34;📞 Delegate Call&#34;]
+    delegate_call_135[&#34;📞 Delegate Call&#34;]
+    delegate_call_137[&#34;📞 Delegate Call&#34;]
+    delegate_call_139[&#34;📞 Delegate Call&#34;]
+    delegate_call_141[&#34;📞 Delegate Call&#34;]
+    delegate_call_143[&#34;📞 Delegate Call&#34;]
+    delegate_call_145[&#34;📞 Delegate Call&#34;]
+    token_transfer_150[&#34;💸 Token Transfer\n30027000000000000000000000&#34;]
+    flash_loan_borrow_4 --&gt;|sequence| delegate_call_5
+    delegate_call_5 --&gt;|sequence| delegate_call_7
+    delegate_call_7 --&gt;|sequence| token_transfer_8
+    token_transfer_8 --&gt;|sequence| contract_deployment_11
+    contract_deployment_11 --&gt;|sequence| contract_deployment_12
+    contract_deployment_12 --&gt;|sequence| token_transfer_13
+    token_transfer_13 --&gt;|sequence| delegate_call_22
+    delegate_call_22 --&gt;|sequence| token_transfer_24
+    token_transfer_24 --&gt;|sequence| delegate_call_26
+    delegate_call_26 --&gt;|sequence| delegate_call_31
+    delegate_call_31 --&gt;|sequence| delegate_call_33
+    delegate_call_33 --&gt;|sequence| delegate_call_35
+    delegate_call_35 --&gt;|sequence| delegate_call_37
+    delegate_call_37 --&gt;|sequence| delegate_call_44
+    delegate_call_44 --&gt;|sequence| token_transfer_46
+    token_transfer_46 --&gt;|sequence| delegate_call_48
+    delegate_call_48 --&gt;|sequence| delegate_call_53
+    delegate_call_53 --&gt;|sequence| delegate_call_55
+    delegate_call_55 --&gt;|sequence| delegate_call_57
+    delegate_call_57 --&gt;|sequence| delegate_call_59
+    delegate_call_59 --&gt;|sequence| delegate_call_65
+    delegate_call_65 --&gt;|sequence| delegate_call_71
+    delegate_call_71 --&gt;|sequence| delegate_call_72
+    delegate_call_72 --&gt;|sequence| delegate_call_76
+    delegate_call_76 --&gt;|sequence| delegate_call_82
+    delegate_call_82 --&gt;|sequence| delegate_call_88
+    delegate_call_88 --&gt;|sequence| delegate_call_89
+    delegate_call_89 --&gt;|sequence| delegate_call_93
+    delegate_call_93 --&gt;|sequence| delegate_call_99
+    delegate_call_99 --&gt;|sequence| delegate_call_106
+    delegate_call_106 --&gt;|sequence| delegate_call_110
+    delegate_call_110 --&gt;|sequence| delegate_call_118
+    delegate_call_118 --&gt;|sequence| token_transfer_120
+    token_transfer_120 --&gt;|sequence| delegate_call_122
+    delegate_call_122 --&gt;|sequence| delegate_call_124
+    delegate_call_124 --&gt;|sequence| token_transfer_129
+    token_transfer_129 --&gt;|sequence| delegate_call_131
+    delegate_call_131 --&gt;|sequence| delegate_call_133
+    delegate_call_133 --&gt;|sequence| delegate_call_135
+    delegate_call_135 --&gt;|sequence| delegate_call_137
+    delegate_call_137 --&gt;|sequence| delegate_call_139
+    delegate_call_139 --&gt;|sequence| delegate_call_141
+    delegate_call_141 --&gt;|sequence| delegate_call_143
+    delegate_call_143 --&gt;|sequence| delegate_call_145
+    delegate_call_145 --&gt;|sequence| token_transfer_150
         </div>
 
         <div class="legend">
@@ -444,9 +258,9 @@ graph TD
                 <tr>
                     <td style="color:var(--text-muted)">1</td>
                     <td>flash_loan_borrow</td>
-                    <td><code>0x5f259d0b76665c337c6104145894f4d1d2758b8c</code></td>
+                    <td><code>0xebc29199c817dc47ba12e3f86102564d640cbf99</code></td>
                     <td><code>0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9</code></td>
-                    <td>1</td>
+                    <td>2</td>
                 </tr>
                 
                 <tr>
@@ -454,7 +268,7 @@ graph TD
                     <td>delegate_call</td>
                     <td><code>0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9</code></td>
                     <td><code>0xc6845a5c768bf8d7681249f8927877efda425baf</code></td>
-                    <td>2</td>
+                    <td>3</td>
                 </tr>
                 
                 <tr>
@@ -462,7 +276,7 @@ graph TD
                     <td>delegate_call</td>
                     <td><code>0x028171bca77440897b824ca71d1c56cac55b68a3</code></td>
                     <td><code>0x7b2a3cf972c3193f26cdec6217d27379b6417bd0</code></td>
-                    <td>4</td>
+                    <td>5</td>
                 </tr>
                 
                 <tr>
@@ -470,1085 +284,341 @@ graph TD
                     <td>token_transfer</td>
                     <td><code></code></td>
                     <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>5</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">5</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
                     <td>6</td>
                 </tr>
                 
                 <tr>
+                    <td style="color:var(--text-muted)">5</td>
+                    <td>contract_deployment</td>
+                    <td><code>0xebc29199c817dc47ba12e3f86102564d640cbf99</code></td>
+                    <td><code></code></td>
+                    <td>5</td>
+                </tr>
+                
+                <tr>
                     <td style="color:var(--text-muted)">6</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
+                    <td>contract_deployment</td>
+                    <td><code></code></td>
+                    <td><code></code></td>
                     <td>6</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">7</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
+                    <td>token_transfer</td>
+                    <td><code>0xebc29199c817dc47ba12e3f86102564d640cbf99</code></td>
                     <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
                     <td>5</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">8</td>
-                    <td>storage_write</td>
-                    <td><code>0x0000000000000000000000000000000000000120</code></td>
-                    <td><code>0x0000000000000000000000000000000000000120</code></td>
-                    <td>5</td>
+                    <td>delegate_call</td>
+                    <td><code>0x27182842e098f60e3d576794a5bffb0777e025d3</code></td>
+                    <td><code>0xbb0d4bb654a21054af95456a3b29c63e8d1f4c0a</code></td>
+                    <td>8</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">9</td>
                     <td>token_transfer</td>
-                    <td><code>0xebc29199c817dc47ba12e3f86102564d640cbf99</code></td>
+                    <td><code></code></td>
                     <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>4</td>
+                    <td>9</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">10</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>5</td>
+                    <td>delegate_call</td>
+                    <td><code></code></td>
+                    <td><code>0x42ec0eb1d2746a9f2739d7501c5d5608bde9ee89</code></td>
+                    <td>9</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">11</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>5</td>
+                    <td>delegate_call</td>
+                    <td><code>0x27182842e098f60e3d576794a5bffb0777e025d3</code></td>
+                    <td><code>0xbb0d4bb654a21054af95456a3b29c63e8d1f4c0a</code></td>
+                    <td>8</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">12</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>6</td>
+                    <td>delegate_call</td>
+                    <td><code></code></td>
+                    <td><code>0x42ec0eb1d2746a9f2739d7501c5d5608bde9ee89</code></td>
+                    <td>9</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">13</td>
                     <td>delegate_call</td>
-                    <td><code>0x27182842e098f60e3d576794a5bffb0777e025d3</code></td>
-                    <td><code>0xbb0d4bb654a21054af95456a3b29c63e8d1f4c0a</code></td>
-                    <td>7</td>
+                    <td><code></code></td>
+                    <td><code>0x42ec0eb1d2746a9f2739d7501c5d5608bde9ee89</code></td>
+                    <td>9</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">14</td>
-                    <td>storage_write</td>
+                    <td>delegate_call</td>
                     <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
+                    <td>9</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">15</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
+                    <td>delegate_call</td>
+                    <td><code>0x27182842e098f60e3d576794a5bffb0777e025d3</code></td>
+                    <td><code>0x29daddfda3442693c21a50351a2b4820ddbbff79</code></td>
                     <td>8</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">16</td>
-                    <td>storage_write</td>
+                    <td>token_transfer</td>
                     <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
+                    <td>9</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">17</td>
-                    <td>storage_write</td>
+                    <td>delegate_call</td>
                     <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td><code>0x42ec0eb1d2746a9f2739d7501c5d5608bde9ee89</code></td>
+                    <td>9</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">18</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
+                    <td>delegate_call</td>
+                    <td><code>0x27182842e098f60e3d576794a5bffb0777e025d3</code></td>
+                    <td><code>0xbb0d4bb654a21054af95456a3b29c63e8d1f4c0a</code></td>
                     <td>8</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">19</td>
-                    <td>token_transfer</td>
+                    <td>delegate_call</td>
                     <td><code></code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>8</td>
+                    <td><code>0x42ec0eb1d2746a9f2739d7501c5d5608bde9ee89</code></td>
+                    <td>9</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">20</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
+                    <td>delegate_call</td>
+                    <td><code></code></td>
+                    <td><code>0x42ec0eb1d2746a9f2739d7501c5d5608bde9ee89</code></td>
                     <td>9</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">21</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
+                    <td>delegate_call</td>
+                    <td><code></code></td>
+                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
                     <td>9</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">22</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
+                    <td>delegate_call</td>
+                    <td><code>0x27182842e098f60e3d576794a5bffb0777e025d3</code></td>
+                    <td><code>0xbb0d4bb654a21054af95456a3b29c63e8d1f4c0a</code></td>
                     <td>8</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">23</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td>delegate_call</td>
+                    <td><code>0x27182842e098f60e3d576794a5bffb0777e025d3</code></td>
+                    <td><code>0xd737ee2bb39f49c62a436002a77f2710cc45ed98</code></td>
+                    <td>9</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">24</td>
                     <td>delegate_call</td>
-                    <td><code></code></td>
-                    <td><code>0x42ec0eb1d2746a9f2739d7501c5d5608bde9ee89</code></td>
-                    <td>8</td>
+                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
+                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
+                    <td>10</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">25</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td>delegate_call</td>
+                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
+                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
+                    <td>10</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">26</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td>delegate_call</td>
+                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
+                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
+                    <td>10</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">27</td>
                     <td>delegate_call</td>
                     <td><code>0x27182842e098f60e3d576794a5bffb0777e025d3</code></td>
-                    <td><code>0xbb0d4bb654a21054af95456a3b29c63e8d1f4c0a</code></td>
-                    <td>7</td>
+                    <td><code>0xd737ee2bb39f49c62a436002a77f2710cc45ed98</code></td>
+                    <td>9</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">28</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td>delegate_call</td>
+                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
+                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
+                    <td>10</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">29</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td>delegate_call</td>
+                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
+                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
+                    <td>10</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">30</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td>delegate_call</td>
+                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
+                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
+                    <td>10</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">31</td>
                     <td>delegate_call</td>
-                    <td><code></code></td>
+                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
                     <td><code>0x42ec0eb1d2746a9f2739d7501c5d5608bde9ee89</code></td>
-                    <td>8</td>
+                    <td>10</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">32</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td>delegate_call</td>
+                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
+                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
+                    <td>10</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">33</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td>delegate_call</td>
+                    <td><code>0x27182842e098f60e3d576794a5bffb0777e025d3</code></td>
+                    <td><code>0xbb0d4bb654a21054af95456a3b29c63e8d1f4c0a</code></td>
+                    <td>9</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">34</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td>token_transfer</td>
+                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
+                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
+                    <td>10</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">35</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td>delegate_call</td>
+                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
+                    <td><code>0x42ec0eb1d2746a9f2739d7501c5d5608bde9ee89</code></td>
+                    <td>10</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">36</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td>delegate_call</td>
+                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
+                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
+                    <td>10</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">37</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td>token_transfer</td>
+                    <td><code>0xa0b3ee897f233f385e5d61086c32685257d4f12b</code></td>
+                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
+                    <td>7</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">38</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td>delegate_call</td>
+                    <td><code>0x6c3c78838c761c6ac7be9f59fe808ea2a6e4379d</code></td>
+                    <td><code>0x3f87b818f94f3cc21e47fd3bf015e8d8183a3e08</code></td>
+                    <td>5</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">39</td>
                     <td>delegate_call</td>
-                    <td><code></code></td>
-                    <td><code>0x42ec0eb1d2746a9f2739d7501c5d5608bde9ee89</code></td>
-                    <td>8</td>
+                    <td><code>0x778a13d3eeb110a4f7bb6529f99c000119a08e92</code></td>
+                    <td><code>0xd23a44eb2db8ad0817c994d3533528c030279f7c</code></td>
+                    <td>5</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">40</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td>delegate_call</td>
+                    <td><code>0x028171bca77440897b824ca71d1c56cac55b68a3</code></td>
+                    <td><code>0x7b2a3cf972c3193f26cdec6217d27379b6417bd0</code></td>
+                    <td>5</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">41</td>
                     <td>delegate_call</td>
-                    <td><code></code></td>
-                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
-                    <td>8</td>
+                    <td><code>0xd784927ff2f95ba542bfc824c8a8a98f3495f6b5</code></td>
+                    <td><code>0xd9ed413bcf58c266f95fe6ba63b13cf79299ce31</code></td>
+                    <td>7</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">42</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td>delegate_call</td>
+                    <td><code>0x028171bca77440897b824ca71d1c56cac55b68a3</code></td>
+                    <td><code>0x7b2a3cf972c3193f26cdec6217d27379b6417bd0</code></td>
+                    <td>5</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">43</td>
                     <td>delegate_call</td>
-                    <td><code>0x27182842e098f60e3d576794a5bffb0777e025d3</code></td>
-                    <td><code>0x29daddfda3442693c21a50351a2b4820ddbbff79</code></td>
+                    <td><code>0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9</code></td>
+                    <td><code>0xc6845a5c768bf8d7681249f8927877efda425baf</code></td>
                     <td>7</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">44</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
+                    <td>delegate_call</td>
+                    <td><code>0x778a13d3eeb110a4f7bb6529f99c000119a08e92</code></td>
+                    <td><code>0xd23a44eb2db8ad0817c994d3533528c030279f7c</code></td>
+                    <td>5</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">45</td>
-                    <td>token_transfer</td>
-                    <td><code></code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>8</td>
+                    <td>delegate_call</td>
+                    <td><code>0x6c3c78838c761c6ac7be9f59fe808ea2a6e4379d</code></td>
+                    <td><code>0x3f87b818f94f3cc21e47fd3bf015e8d8183a3e08</code></td>
+                    <td>5</td>
                 </tr>
                 
                 <tr>
                     <td style="color:var(--text-muted)">46</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">47</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">48</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">49</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">50</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">51</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">52</td>
-                    <td>delegate_call</td>
-                    <td><code></code></td>
-                    <td><code>0x42ec0eb1d2746a9f2739d7501c5d5608bde9ee89</code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">53</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">54</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">55</td>
-                    <td>delegate_call</td>
-                    <td><code>0x27182842e098f60e3d576794a5bffb0777e025d3</code></td>
-                    <td><code>0xbb0d4bb654a21054af95456a3b29c63e8d1f4c0a</code></td>
-                    <td>7</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">56</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">57</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">58</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">59</td>
-                    <td>delegate_call</td>
-                    <td><code></code></td>
-                    <td><code>0x42ec0eb1d2746a9f2739d7501c5d5608bde9ee89</code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">60</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">61</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">62</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">63</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">64</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">65</td>
-                    <td>delegate_call</td>
-                    <td><code></code></td>
-                    <td><code>0x42ec0eb1d2746a9f2739d7501c5d5608bde9ee89</code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">66</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">67</td>
-                    <td>delegate_call</td>
-                    <td><code></code></td>
-                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">68</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">69</td>
-                    <td>delegate_call</td>
-                    <td><code>0x27182842e098f60e3d576794a5bffb0777e025d3</code></td>
-                    <td><code>0xbb0d4bb654a21054af95456a3b29c63e8d1f4c0a</code></td>
-                    <td>7</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">70</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">71</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">72</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">73</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">74</td>
-                    <td>delegate_call</td>
-                    <td><code>0x27182842e098f60e3d576794a5bffb0777e025d3</code></td>
-                    <td><code>0xd737ee2bb39f49c62a436002a77f2710cc45ed98</code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">75</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">76</td>
-                    <td>delegate_call</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">77</td>
-                    <td>delegate_call</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">78</td>
-                    <td>delegate_call</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">79</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">80</td>
-                    <td>delegate_call</td>
-                    <td><code>0x27182842e098f60e3d576794a5bffb0777e025d3</code></td>
-                    <td><code>0xd737ee2bb39f49c62a436002a77f2710cc45ed98</code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">81</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">82</td>
-                    <td>delegate_call</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">83</td>
-                    <td>delegate_call</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">84</td>
-                    <td>delegate_call</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">85</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">86</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">87</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">88</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">89</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">90</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">91</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">92</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">93</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">94</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">95</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">96</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">97</td>
-                    <td>delegate_call</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0x42ec0eb1d2746a9f2739d7501c5d5608bde9ee89</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">98</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">99</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">100</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">101</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">102</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">103</td>
-                    <td>delegate_call</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">104</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">105</td>
-                    <td>delegate_call</td>
-                    <td><code>0x27182842e098f60e3d576794a5bffb0777e025d3</code></td>
-                    <td><code>0xbb0d4bb654a21054af95456a3b29c63e8d1f4c0a</code></td>
-                    <td>8</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">106</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">107</td>
-                    <td>token_transfer</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">108</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>10</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">109</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>10</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">110</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">111</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">112</td>
-                    <td>delegate_call</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0x42ec0eb1d2746a9f2739d7501c5d5608bde9ee89</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">113</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">114</td>
-                    <td>delegate_call</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0x3297c8db9360f87a7f7826f52a4fa143988931a6</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">115</td>
-                    <td>storage_write</td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td><code>0xe025e3ca2be02316033184551d4d3aa22024d9dc</code></td>
-                    <td>9</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">116</td>
-                    <td>token_transfer</td>
-                    <td><code>0xa0b3ee897f233f385e5d61086c32685257d4f12b</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>6</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">117</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>7</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">118</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>7</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">119</td>
-                    <td>storage_write</td>
-                    <td><code>0xebc29199c817dc47ba12e3f86102564d640cbf99</code></td>
-                    <td><code>0xebc29199c817dc47ba12e3f86102564d640cbf99</code></td>
-                    <td>4</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">120</td>
-                    <td>delegate_call</td>
-                    <td><code>0x6c3c78838c761c6ac7be9f59fe808ea2a6e4379d</code></td>
-                    <td><code>0x3f87b818f94f3cc21e47fd3bf015e8d8183a3e08</code></td>
-                    <td>4</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">121</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>3</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">122</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>3</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">123</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>3</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">124</td>
-                    <td>delegate_call</td>
-                    <td><code>0x778a13d3eeb110a4f7bb6529f99c000119a08e92</code></td>
-                    <td><code>0xd23a44eb2db8ad0817c994d3533528c030279f7c</code></td>
-                    <td>4</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">125</td>
-                    <td>delegate_call</td>
-                    <td><code>0x028171bca77440897b824ca71d1c56cac55b68a3</code></td>
-                    <td><code>0x7b2a3cf972c3193f26cdec6217d27379b6417bd0</code></td>
-                    <td>4</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">126</td>
-                    <td>storage_write</td>
-                    <td><code>0x583c21631c48d442b5c0e605d624f54a0b366c72</code></td>
-                    <td><code>0x583c21631c48d442b5c0e605d624f54a0b366c72</code></td>
-                    <td>5</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">127</td>
-                    <td>storage_write</td>
-                    <td><code>0x583c21631c48d442b5c0e605d624f54a0b366c72</code></td>
-                    <td><code>0x583c21631c48d442b5c0e605d624f54a0b366c72</code></td>
-                    <td>5</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">128</td>
-                    <td>delegate_call</td>
-                    <td><code>0xd784927ff2f95ba542bfc824c8a8a98f3495f6b5</code></td>
-                    <td><code>0xd9ed413bcf58c266f95fe6ba63b13cf79299ce31</code></td>
-                    <td>6</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">129</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>7</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">130</td>
-                    <td>delegate_call</td>
-                    <td><code>0x028171bca77440897b824ca71d1c56cac55b68a3</code></td>
-                    <td><code>0x7b2a3cf972c3193f26cdec6217d27379b6417bd0</code></td>
-                    <td>4</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">131</td>
-                    <td>delegate_call</td>
-                    <td><code>0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9</code></td>
-                    <td><code>0xc6845a5c768bf8d7681249f8927877efda425baf</code></td>
-                    <td>6</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">132</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>3</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">133</td>
-                    <td>delegate_call</td>
-                    <td><code>0x778a13d3eeb110a4f7bb6529f99c000119a08e92</code></td>
-                    <td><code>0xd23a44eb2db8ad0817c994d3533528c030279f7c</code></td>
-                    <td>4</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">134</td>
-                    <td>delegate_call</td>
-                    <td><code>0x6c3c78838c761c6ac7be9f59fe808ea2a6e4379d</code></td>
-                    <td><code>0x3f87b818f94f3cc21e47fd3bf015e8d8183a3e08</code></td>
-                    <td>4</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">135</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>3</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">136</td>
-                    <td>storage_write</td>
-                    <td><code></code></td>
-                    <td><code></code></td>
-                    <td>3</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">137</td>
                     <td>token_transfer</td>
                     <td><code></code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>3</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">138</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>4</td>
-                </tr>
-                
-                <tr>
-                    <td style="color:var(--text-muted)">139</td>
-                    <td>storage_write</td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
                     <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
                     <td>4</td>
                 </tr>
@@ -1557,30 +627,6 @@ graph TD
         </table>
     </section>
 
-    
-    <section id="ablation">
-        <h3>Ablation Results</h3>
-        <table>
-            <thead>
-                <tr><th>Factor Removed</th><th>Outcome</th><th>Details</th></tr>
-            </thead>
-            <tbody>
-                
-                <tr>
-                    <td>pool_donation</td>
-                    <td>ERROR</td>
-                    <td>counterfactual could not be applied: &#39;pool_donation&#39; missing &#39;address&#39; for anvil_setStorageAt</td>
-                </tr>
-                
-                <tr>
-                    <td>attacker_seed_position</td>
-                    <td>ERROR</td>
-                    <td>counterfactual could not be applied: &#39;attacker_seed_position&#39; missing &#39;address&#39; for anvil_setStorageAt</td>
-                </tr>
-                
-            </tbody>
-        </table>
-    </section>
     
 
     
@@ -1605,41 +651,65 @@ graph TD
             <tbody>
                 
                 <tr>
-                    <td><strong>Aave</strong></td>
-                    <td><code>0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9</code></td>
-                    <td>Flash loan provider</td>
-                    <td class="risk-medium">MEDIUM</td>
-                    <td></td>
-                </tr>
-                
-                <tr>
-                    <td><strong>Compound</strong></td>
-                    <td><code>0x3f87b818f94f3cc21e47fd3bf015e8d8183a3e08</code></td>
-                    <td>Shared liquidity pool</td>
-                    <td class="risk-medium">MEDIUM</td>
-                    <td></td>
-                </tr>
-                
-                <tr>
-                    <td><strong>Uniswap</strong></td>
-                    <td><code>0x5f259d0b76665c337c6104145894f4d1d2758b8c</code></td>
-                    <td>Potential liquidity pool manipulation</td>
-                    <td class="risk-medium">MEDIUM</td>
-                    <td></td>
-                </tr>
-                
-                <tr>
-                    <td><strong>MakerDAO</strong></td>
-                    <td><code>0x6b175474e89094c44da98b954eedeac495271d0f</code></td>
-                    <td>DAI token involved</td>
+                    <td><strong>Euler Finance</strong></td>
+                    <td><code>0x2718289EDd7f8eF8b96A19dD7fF75e7e3f2d25d3</code></td>
+                    <td>Primary exploited protocol; Euler lending markets for DAI and other assets were drained via donation + bad-debt liquidation pattern</td>
                     <td class="risk-high">HIGH</td>
                     <td></td>
                 </tr>
                 
                 <tr>
-                    <td><strong>Balancer</strong></td>
-                    <td><code>0x028171bca77440897b824ca71d1c56cac55b68a3</code></td>
-                    <td>Shared liquidity pool</td>
+                    <td><strong>Aave V2 (Ethereum)</strong></td>
+                    <td><code>0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9</code></td>
+                    <td>Source of initial flash loan used to mount the Euler exploit; no direct loss of funds but temporarily bore concentrated liquidity and price risk during the transaction</td>
+                    <td class="risk-low">LOW</td>
+                    <td></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>MakerDAO / DAI Stablecoin</strong></td>
+                    <td><code>0x6B175474E89094C44Da98b954EedeAC495271d0F</code></td>
+                    <td>Underlying asset drained from Euler and heavily moved; core stablecoin used as flash‑loan asset and as the value carrier of the exploit proceeds</td>
+                    <td class="risk-medium">MEDIUM</td>
+                    <td></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>DEXs and DAI Liquidity Pools (Uniswap V2/V3, Curve, Balancer et al.)</strong></td>
+                    <td><code>multiple</code></td>
+                    <td>Downstream venues where stolen DAI can be swapped to other assets for laundering, potentially impacting pool balances, spot prices, and TWAP oracles used elsewhere</td>
+                    <td class="risk-medium">MEDIUM</td>
+                    <td></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>Protocols Using Euler eTokens/dTokens or Euler Positions as Collateral</strong></td>
+                    <td><code>multiple</code></td>
+                    <td>Any protocol that accepted Euler derivative tokens, account shares, or debt tokens as collateral or as yield-bearing assets is now exposed to worthless or impaired collateral</td>
+                    <td class="risk-high">HIGH</td>
+                    <td></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>Protocols Using DAI‑Denominated Money‑Market Yields from Euler</strong></td>
+                    <td><code>multiple</code></td>
+                    <td>Yield aggregators/structured products routing user deposits into Euler DAI markets have lost underlying principal and may pass losses to depositors</td>
+                    <td class="risk-high">HIGH</td>
+                    <td></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>Euler Governance Token (EUL) and Derivatives</strong></td>
+                    <td><code>0xd9fcd98c322942075A5C3860693e9f4f03AAE07b</code></td>
+                    <td>Governance token for Euler; exploit and protocol suspension severely impact token value and any lending, perps, or structured products referencing EUL</td>
+                    <td class="risk-medium">MEDIUM</td>
+                    <td></td>
+                </tr>
+                
+                <tr>
+                    <td><strong>Oracle‑Dependent Protocols that Used Euler‑Linked Feeds (if any)</strong></td>
+                    <td><code>multiple</code></td>
+                    <td>Any protocol that directly consumed Euler’s internal prices, oracles referencing Euler liquidity, or wrapped Euler assets in price feeds may have stale or invalid valuations</td>
                     <td class="risk-medium">MEDIUM</td>
                     <td></td>
                 </tr>
@@ -1654,11 +724,23 @@ graph TD
             
             <li>Estimated cascading token losses: $8,904,507.35 USD</li>
             
-            <li>Oracle manipulation affecting price feeds</li>
+            <li>Euler insolvency and market shutdown cause Euler positions, eTokens, and dTokens used as collateral elsewhere to become illiquid or worthless, leading to forced unwinds or bad debt in downstream protocols.</li>
             
-            <li>Liquidity pool imbalances leading to further arbitrage opportunities</li>
+            <li>Yield aggregators and vaults that routed DAI or other assets into Euler money markets suffer principal loss, which can trigger share price drops, vault halts, or under‑collateralization in structured products built on top of those vaults.</li>
             
-            <li>Potential governance token devaluation due to loss of trust</li>
+            <li>Stolen DAI being swapped across DEXes (Uniswap, Curve, Balancer) can cause short‑term liquidity imbalances and price dislocations, which may propagate to protocols that depend on these DEX pools as price or liquidity oracles.</li>
+            
+            <li>Any protocol that accepted DAI liquidity tokens (LP tokens) that become imbalanced due to attacker swaps may see distorted collateral valuations and unexpected liquidation cascades.</li>
+            
+            <li>If any oracle (Chainlink custom feeds, custom on‑chain or TWAP oracles) derived prices from Euler markets or from pools heavily impacted by the attacker’s DAI flows, downstream lending/derivatives protocols can face mispriced collateral and opportunistic liquidations.</li>
+            
+            <li>Governance and risk parameters in protocols holding Euler exposure (directly or via vaults) may no longer reflect actual risk; unchanged LTVs and collateral factors can allow users to remain over‑levered against impaired collateral.</li>
+            
+            <li>EUL governance token price collapse can affect any lending, margin, or derivatives markets that list EUL as collateral or underlying, potentially leading to margin calls and liquidations if risk parameters are not tightened promptly.</li>
+            
+            <li>Aggregator frontends and portfolio managers that treat Euler positions as redeemable may misreport user balances and risk, leading to poor user decisions and delayed exit from at‑risk positions elsewhere.</li>
+            
+            <li>If attackers use cross‑chain bridges to move stolen DAI or swapped assets, bridged versions of those assets (on L2s or other L1s) may experience temporary liquidity or peg stress in smaller pools.</li>
             
         </ul>
         
@@ -1667,13 +749,37 @@ graph TD
         <h4>Recommendations</h4>
         <ul>
             
-            <li>Conduct a thorough audit of all affected contracts and dependencies.</li>
+            <li>For Euler Finance: keep all Euler markets paused; disable further borrowing and redemptions except for controlled recovery operations; publish a full post‑mortem and detailed list of affected markets, including specific asset addresses and magnitude of bad debt.</li>
             
-            <li>Implement additional monitoring and alerting for unusual activities in shared liquidity pools.</li>
+            <li>For Euler Finance: coordinate with major downstream integrators (Yearn, Idle, Index protocols, yield aggregators, DeFi dashboards) to provide canonical pricing and impairment factors for all eTokens and dTokens, so integrators can mark exposures correctly.</li>
             
-            <li>Consider pausing or limiting certain functionalities in affected protocols to prevent further exploitation.</li>
+            <li>For Euler Finance: work with security firms and law‑enforcement to trace stolen DAI and any swapped assets; label attacker addresses and related contracts; consider on‑chain incentives or negotiations only with clear, time‑boxed plans and community approval.</li>
             
-            <li>Engage with the community and stakeholders to communicate the impact and planned mitigations.</li>
+            <li>For Euler Finance: hard‑lock or deprecate vulnerable mechanisms (donation/insolvent‑liquidation logic) and subject any redesign to formal audits and public reviews before considering protocol restart.</li>
+            
+            <li>For Aave and other flash‑loan providers: no funds are directly lost, but add Euler‑related addresses and the attacker addresses to internal monitoring/alerting; optionally flag or restrict clearly malicious flows in risk dashboards.</li>
+            
+            <li>For MakerDAO and DAI risk managers: monitor large DAI movements associated with Euler attacker addresses; assess whether any Maker vault owners had significant exposure to Euler via leveraged DAI strategies that could increase liquidation risk in Maker.</li>
+            
+            <li>For DEX and liquidity‑pool protocols (Uniswap, Curve, Balancer, etc.): monitor pools that experienced large DAI inflows/outflows around the exploit; check whether any pools are now heavily imbalanced and update UI warnings or recommended routes accordingly.</li>
+            
+            <li>For all lending and margin protocols: immediately identify and flag any collateral or yield sources that include Euler eTokens, dTokens, or vault tokens that route into Euler; freeze new borrowing against such collateral and consider reducing LTV to zero until exposures are quantified.</li>
+            
+            <li>For yield aggregators and vault protocols: enumerate all strategies that used Euler as an underlying venue; stop deposits and auto‑compounding for those strategies; mark shares to reflect realized losses and communicate user impact transparently.</li>
+            
+            <li>For protocols using DAI‑denominated LP tokens or structured products: re‑value LP tokens that might be affected by Euler‑driven DAI flows (large swaps); if collateral valuations depended on constant-product assumptions, recompute based on actual reserves.</li>
+            
+            <li>For oracle providers and protocol risk teams: verify that no production oracle relies directly on Euler liquidity or on thin DAI pools heavily impacted by attacker swaps; if any do, switch to more robust feeds (e.g., Chainlink main feeds or deeper pools) and update fallbacks.</li>
+            
+            <li>For protocols listing EUL as collateral or underlying: temporarily halt new borrowing against EUL and lower collateral factors to reflect increased volatility and liquidity risk; if necessary, start a managed deleveraging process instead of allowing uncontrolled liquidations.</li>
+            
+            <li>For integrators and portfolio trackers: mark Euler‑related positions as impaired; differentiate between realized losses and frozen/unpriced assets; add explicit warnings in UIs so users understand that displayed balances may not be redeemable.</li>
+            
+            <li>For cross‑chain bridge operators: monitor flows from known Euler attacker addresses; be prepared to blacklist or flag deposits in line with your governance and compliance policies; coordinate with downstream L2 protocols to propagate any risk labels.</li>
+            
+            <li>For all affected protocols: run a dependency audit to catalog where Euler or Euler‑related assets are referenced (directly or via other vault tokens); document these dependencies publicly so users and other protocols can understand their second‑order exposure.</li>
+            
+            <li>For protocol governance bodies: convene emergency risk calls or votes to adjust parameters (caps, LTVs, oracles, whitelists/blacklists) that are impacted by Euler‑related assets or DAI liquidity conditions; set explicit review checkpoints as on‑chain data evolves.</li>
             
         </ul>
         
@@ -1682,11 +788,11 @@ graph TD
 
     <section id="reasoning">
         <h3>Analysis</h3>
-        <p>Verdict: VERIFIED for technique &#39;donation_attack&#39; (LLM confidence 90%).
+        <p>Verdict: VERIFIED for technique &#39;flash_loan_attack&#39; (LLM confidence 88%).
 Evaluated 3 predicates: 3 passed, 0 failed, 0 skipped.
   Confirmed: balance_increased, flash_loan_detected, reentrancy_detected.
-Ran 2 ablation test(s): pool_donation -&gt; ERROR; attacker_seed_position -&gt; ERROR.
-Alternative hypotheses considered: flash_loan_attack.</p>
+No ablation tests were run.
+Alternative hypotheses considered: donation_attack, logic_bug.</p>
     </section>
 
     <footer>
