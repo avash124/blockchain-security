@@ -12,6 +12,62 @@ Your task is to:
 3. Provide a clear chain of reasoning
 4. Suggest alternative hypotheses if confidence < 0.9
 
+Important — counts vs. semantics:
+- Action types tagged "(baseline-proxy/state)" in the distribution summary
+  (storage_write, storage_read, delegate_call) are the BASELINE activity of any
+  modern proxy/diamond-based protocol (Euler, Aave, Compound, etc.). High raw
+  counts of these types are NOT exploit evidence on their own — every legitimate
+  call in those protocols produces them. Do NOT use a high delegate_call or
+  storage_write count to justify a classification. Only the SEMANTIC pattern of
+  non-baseline actions (token_transfer, dex_swap, flash_loan_borrow, oracle_read,
+  liquidation, governance_action, eth_transfer, self_destruct, contract_deployment)
+  carries discriminating signal.
+
+Classify the EXPLOIT MECHANISM, not the funding source:
+- flash_loan_borrow is just CAPITAL — almost every modern DeFi exploit borrows
+  one. Its presence alone does NOT make this a flash_loan_attack. Only classify
+  as flash_loan_attack when the entire attack mechanism is the loan + price
+  manipulation via dex_swap (e.g., borrow → swap to move spot price → arb back
+  → repay). If the flash-borrowed capital is then used for a more specific
+  mechanism (donation, oracle manipulation, governance vote, etc.), classify
+  by that downstream mechanism.
+
+Mandatory classification checklist — work through these IN ORDER and pick the
+FIRST technique whose specific fingerprint matches. Only fall through to the
+next item if the current one does not fit. delegate_call_exploit is the LAST
+option and is ONLY valid when the delegatecall target is attacker-deployed or
+clearly attacker-controlled (e.g. a newly-deployed contract in the same tx):
+
+  1. governance_attack       — governance_action present.
+  2. self_destruct_exploit   — self_destruct present.
+  3. price_oracle_manipulation — oracle_read close to a large dex_swap that
+                                  moves the spot price the oracle uses.
+  4. donation_attack         — token_transfer(s) DIRECTLY INTO a pool/vault
+                                outside the deposit flow, followed by a
+                                liquidation, withdrawal, or inflated redemption
+                                that captures the donated value. The
+                                Euler-March-2023 exploit (flash-borrow → donate
+                                to depleted account → self-liquidate to mint bad
+                                debt) is the canonical case — note that a flash
+                                loan funding the donation does NOT make it a
+                                flash_loan_attack; the MECHANISM is donation.
+  5. sandwich_attack         — dex_swap, dex_swap pattern bracketing a victim swap.
+  6. flash_loan_attack       — flash_loan_borrow + dex_swap that itself moves
+                                spot price for arb profit (the loan + swap is
+                                the entire mechanism, with no donation, oracle,
+                                governance, or other downstream pattern).
+  7. liquidity_pool_drain    — repeated token_transfers draining a pool via
+                                arithmetic/precision bugs.
+  8. reentrancy              — eth_transfer or token_transfer that re-enters
+                                the caller before its state is updated.
+  9. access_control_bypass   — privileged-looking storage_write whose caller
+                                lacks the expected ownership/role.
+ 10. logic_bug               — arithmetic overflow/underflow or state-machine
+                                misuse not covered above.
+ 11. delegate_call_exploit   — ONLY when the delegatecall target is attacker-
+                                deployed or attacker-controlled. NEVER pick this
+                                solely because the trace has many delegatecalls.
+
 Respond in JSON with this structure:
 {
   "primary_technique": "technique_name",

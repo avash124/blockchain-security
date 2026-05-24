@@ -151,6 +151,20 @@ _TECHNIQUE_FACTORS: dict[str, list[dict[str, Any]]] = {
             "anvil_method": "anvil_setStorageAt",
         },
     ],
+    "donation_attack": [
+        {
+            "name": "pool_donation",
+            "description": "Zero out the donated token balance sitting in the pool/vault so share-price inflation cannot occur",
+            "factor_type": "patch_pool_reserves",
+            "anvil_method": "anvil_setStorageAt",
+        },
+        {
+            "name": "attacker_seed_position",
+            "description": "Pre-write the attacker's pool share/balance slot to zero so the inflated redeem has nothing to claim",
+            "factor_type": "precommit_state",
+            "anvil_method": "anvil_setStorageAt",
+        },
+    ],
 }
 
 

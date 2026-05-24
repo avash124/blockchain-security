@@ -761,12 +761,12 @@ class TestCausalFactorExtraction:
 # =====================================================================
 
 class TestTechniqueFactorsMapping:
-    def test_covers_all_ten_known_techniques(self):
+    def test_covers_all_known_techniques(self):
         expected = {
             "flash_loan_attack", "price_oracle_manipulation", "reentrancy",
             "governance_attack", "delegate_call_exploit", "access_control_bypass",
             "liquidity_pool_drain", "sandwich_attack", "self_destruct_exploit",
-            "logic_bug",
+            "logic_bug", "donation_attack",
         }
         assert set(_TECHNIQUE_FACTORS.keys()) == expected
 

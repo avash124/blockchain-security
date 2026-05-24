@@ -28,8 +28,26 @@ DEFAULT_TECHNIQUES: dict[str, dict[str, Any]] = {
         "indicators": ["governance_action", "token_transfer", "flash_loan_borrow"],
     },
     "delegate_call_exploit": {
-        "description": "Exploits a delegatecall into an untrusted implementation contract to overwrite critical storage slots.",
-        "indicators": ["delegate_call", "storage_write"],
+        "description": (
+            "Exploits a delegatecall into an ATTACKER-CONTROLLED or UNTRUSTED implementation "
+            "to overwrite critical storage slots in the caller's context. NOTE: standard "
+            "proxy/diamond/module patterns delegatecall into the protocol's own verified "
+            "implementation on every call — high delegatecall counts alone are NOT evidence "
+            "of this technique. Only classify as delegate_call_exploit when the delegatecall "
+            "target was deployed/controlled by the attacker, or when storage slots are "
+            "overwritten via a delegatecall that bypasses normal access control."
+        ),
+        "indicators": ["delegate_call", "storage_write", "attacker_deployed_implementation"],
+    },
+    "donation_attack": {
+        "description": (
+            "Inflates pool/vault share price or corrupts protocol accounting by transferring "
+            "tokens directly into a pool ('donation') outside the normal deposit flow, then "
+            "redeeming inflated shares or triggering favourable liquidation/borrow accounting. "
+            "Classic on ERC4626-style vaults and on Euler-style lending markets where a "
+            "donate-then-liquidate sequence creates bad debt that the attacker captures."
+        ),
+        "indicators": ["token_transfer", "deposit", "withdraw", "storage_write", "liquidation"],
     },
     "access_control_bypass": {
         "description": "Calls a privileged function without proper authorization — misconfigured modifier or missing ownership check.",
@@ -96,24 +114,68 @@ class ExploitClassifier:
             f"Total semantic actions: {len(ir_graph.actions)}",
         ]
 
-        # Action-type frequency summary — fast signal for the model
+        # Action-type frequency summary — fast signal for the model.
+        # storage_write/storage_read/delegate_call are tagged as "baseline" because
+        # in modern proxy/diamond-based protocols (Euler, Aave, etc.) every external
+        # call routes through delegatecall and most fns write state. Raw counts of
+        # these types are NOT exploit evidence — only their semantics in context are.
         type_counts: dict[str, int] = {}
         for action in ir_graph.actions:
             key = action.action_type.value
             type_counts[key] = type_counts.get(key, 0) + 1
 
+        _BASELINE_TYPES = {"storage_write", "storage_read", "delegate_call"}
         if type_counts:
-            distribution = ", ".join(f"{k}={v}" for k, v in type_counts.items())
-            lines.append(f"Action distribution: {distribution}")
+            parts = []
+            for k, v in type_counts.items():
+                tag = " (baseline-proxy/state)" if k in _BASELINE_TYPES else ""
+                parts.append(f"{k}={v}{tag}")
+            lines.append(f"Action distribution: {', '.join(parts)}")
 
         # Metadata from the IR graph (block number, gas, etc.)
         if ir_graph.metadata:
             meta_str = ", ".join(f"{k}={v}" for k, v in ir_graph.metadata.items())
             lines.append(f"Metadata: {meta_str}")
 
-        # Ordered action list
+        # Ordered action list — omit high-volume noise types from the body;
+        # they are already captured in the distribution summary above. We also
+        # cap any single action type to _PER_TYPE_CAP occurrences so a single
+        # dominant type (e.g. proxy-pattern delegate_call) can't drown out the
+        # rarer signal types (token_transfer, flash_loan_borrow, liquidation)
+        # that often discriminate between techniques.
+        _NOISE = {"storage_write", "storage_read", "unknown"}
+        _PER_TYPE_CAP = 5
+        _MAX_ACTIONS = 80
+        per_type_seen: dict[str, int] = {}
+        per_type_capped: dict[str, int] = {}
+        notable: list = []
+        for action in ir_graph.actions:
+            t = action.action_type.value
+            if t in _NOISE:
+                continue
+            per_type_seen[t] = per_type_seen.get(t, 0) + 1
+            if per_type_seen[t] > _PER_TYPE_CAP:
+                per_type_capped[t] = per_type_capped.get(t, 0) + 1
+                continue
+            notable.append(action)
+        noise_count = sum(1 for a in ir_graph.actions if a.action_type.value in _NOISE)
+        display = notable[:_MAX_ACTIONS]
+
         lines += ["", "## Action Sequence"]
-        for i, action in enumerate(ir_graph.actions):
+        if noise_count:
+            lines.append(
+                f"  [+{noise_count} storage_read/write ops omitted — see distribution above]"
+            )
+        if per_type_capped:
+            capped_summary = ", ".join(
+                f"{t}+{n}" for t, n in sorted(per_type_capped.items(), key=lambda kv: -kv[1])
+            )
+            lines.append(
+                f"  [per-type cap applied (first {_PER_TYPE_CAP} kept per type): {capped_summary}]"
+            )
+        if len(notable) > _MAX_ACTIONS:
+            lines.append(f"  [showing first {_MAX_ACTIONS} of {len(notable)} notable actions]")
+        for i, action in enumerate(display):
             params_str = (
                 ", ".join(f"{k}={v}" for k, v in action.params.items())
                 if action.params
@@ -126,10 +188,14 @@ class ExploitClassifier:
                 f"  {i + 1:>3}. [{action.action_type.value}] {depth_info} {addr_info}{detail}"
             )
 
-        # Control/data flow edges
-        if ir_graph.edges:
-            lines += ["", "## Control / Data Flow Edges"]
-            for from_id, to_id, label in ir_graph.edges:
+        # Control/data flow edges — only non-sequence edges carry semantic signal
+        _MAX_EDGES = 60
+        semantic_edges = [
+            (f, t, l) for f, t, l in ir_graph.edges if l != "sequence"
+        ]
+        if semantic_edges:
+            lines += ["", "## Semantic Edges (flash_loan_scope / amount_match / storage_dep)"]
+            for from_id, to_id, label in semantic_edges[:_MAX_EDGES]:
                 lines.append(f"  {from_id} --[{label}]--> {to_id}")
 
         # Techniques taxonomy for grounded classification

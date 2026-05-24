@@ -103,182 +103,164 @@ class IRVisualizer:
         graph: IRGraph,
         scenario_config: dict[str, Any] | None = None,
     ) -> str:
-        """Rich forensic Mermaid flowchart: attack path + vulnerability + fix annotations."""
+        """Network-style forensic graph: address nodes with full addresses, aggregated edges."""
         cfg = scenario_config or {}
-        lines: list[str] = ["graph TD"]
-        lines.append("")
 
-        # ── Style classes ──────────────────────────────────────────────
+        attacker = cfg.get("attacker_address", "").lower()
+        attack_contract = graph.metadata.get("tx_to", "").lower()
+        target_map = {
+            t["address"].lower(): t.get("name", "Protocol")
+            for t in cfg.get("target_contracts", [])
+        }
+        token_addrs = {t.lower() for t in cfg.get("tokens", [])}
+
+        # Collect all unique non-empty addresses in a stable, meaningful order
+        seen: set[str] = set()
+        addr_order: list[str] = []
+
+        def _reg(addr: str) -> None:
+            a = addr.lower() if addr else ""
+            if a and a not in seen:
+                seen.add(a)
+                addr_order.append(a)
+
+        for a in [attacker, attack_contract, *sorted(target_map), *sorted(token_addrs)]:
+            _reg(a)
+        for action in graph.actions:
+            _reg(action.from_addr)
+            _reg(action.to_addr)
+
+        addr_to_id: dict[str, str] = {addr: f"N{i}" for i, addr in enumerate(addr_order)}
+
+        # Aggregate edges: (from, to) → {action_type: count}, skip self-loops
+        edge_data: dict[tuple[str, str], dict[str, int]] = {}
+        for action in graph.actions:
+            f = action.from_addr.lower() if action.from_addr else ""
+            t = action.to_addr.lower() if action.to_addr else ""
+            if f and t and f != t:
+                bucket = edge_data.setdefault((f, t), {})
+                bucket[action.action_type.value] = bucket.get(action.action_type.value, 0) + 1
+
+        _EDGE_LABELS: dict[str, str] = {
+            "flash_loan_borrow": "flash_loan",
+            "flash_loan_repay":  "flash_repay",
+            "token_transfer":    "transfer",
+            "eth_transfer":      "eth",
+            "dex_swap":          "dex_swap",
+            "delegate_call":     "delegatecall",
+            "storage_write":     "storage_write",
+            "self_destruct":     "selfdestruct",
+            "contract_deployment": "deploy",
+            "governance_action": "governance",
+            "oracle_read":       "oracle_read",
+            "liquidation":       "liquidation",
+        }
+
+        # Find the most-targeted contract for each action type that has vuln annotations.
+        # Used to anchor vuln/fix nodes to the relevant address in the network graph.
+        from collections import Counter as _Counter
+        present_types = {a.action_type for a in graph.actions}
+        vuln_anchor: dict[ActionType, str] = {}
+        for atype in _VULN_FIXES:
+            if atype not in present_types:
+                continue
+            to_addrs = [
+                a.to_addr.lower()
+                for a in graph.get_actions_by_type(atype)
+                if a.to_addr
+            ]
+            if to_addrs:
+                most_common_addr = _Counter(to_addrs).most_common(1)[0][0]
+                vuln_anchor[atype] = most_common_addr
+
+        # Build vuln/fix node list
+        vuln_fix_nodes: list[tuple[str, str, str, str, str]] = []
+        # (vid, fid, vuln_text, fix_text, anchor_addr)
+        vf_idx = 1
+        for atype, pairs in _VULN_FIXES.items():
+            if atype not in present_types:
+                continue
+            anchor = vuln_anchor.get(atype, attack_contract or attacker)
+            for vuln_desc, fix_desc in pairs:
+                vuln_fix_nodes.append((f"V{vf_idx}", f"F{vf_idx}", vuln_desc, fix_desc, anchor))
+                vf_idx += 1
+
+        lines: list[str] = ["graph LR", ""]
+
         lines += [
             "    classDef attacker fill:#6b0f1a,stroke:#e74c3c,color:#ffd6d6,font-weight:bold",
+            "    classDef atk_ctr  fill:#3d0f1a,stroke:#e74c3c,color:#ffb3b3",
             "    classDef protocol fill:#0d2137,stroke:#2980b9,color:#aed6f1",
-            "    classDef flash   fill:#2c0f40,stroke:#8e44ad,color:#dab8f3",
-            "    classDef step    fill:#0f1f2e,stroke:#566573,color:#c8d6e5",
-            "    classDef vuln    fill:#4a1000,stroke:#cb4335,color:#fad7a0,stroke-dasharray:6 3",
-            "    classDef fix     fill:#052e16,stroke:#27ae60,color:#a9dfbf,stroke-dasharray:3 3",
-            "    classDef profit  fill:#3d2c00,stroke:#d4ac0d,color:#fef9e7,font-weight:bold",
-            "    classDef xfer    fill:#0a2618,stroke:#27ae60,color:#abebc6",
+            "    classDef token    fill:#052e16,stroke:#27ae60,color:#a9dfbf",
+            "    classDef other    fill:#1a1a2e,stroke:#566573,color:#c8d6e5",
+            "    classDef vuln     fill:#4a1000,stroke:#cb4335,color:#fad7a0,stroke-dasharray:6 3",
+            "    classDef fix      fill:#052e16,stroke:#27ae60,color:#a9dfbf,stroke-dasharray:3 3",
             "",
         ]
 
-        # ── Actors ─────────────────────────────────────────────────────
-        attacker = cfg.get("attacker_address", "")
-        atk_short = self._shorten_addr(attacker) if attacker else "Attacker"
-        lines.append(f'    ATTKR["🔴 Attacker<br/>{atk_short}"]')
+        # Address nodes — full addresses as labels
+        for addr in addr_order:
+            nid = addr_to_id[addr]
+            if addr == attacker:
+                lines.append(f'    {nid}["👤 Attacker EOA<br/>{addr}"]')
+            elif addr == attack_contract:
+                lines.append(f'    {nid}["⚔ Attack Contract<br/>{addr}"]')
+            elif addr in target_map:
+                lines.append(f'    {nid}["🏛 {target_map[addr]}<br/>{addr}"]')
+            elif addr in token_addrs:
+                lines.append(f'    {nid}["🪙 Token<br/>{addr}"]')
+            else:
+                lines.append(f'    {nid}["📋 {addr}"]')
 
-        targets = cfg.get("target_contracts", [])
-        proto_ids: list[str] = []
-        for i, t in enumerate(targets):
-            pid = f"PROTO{i}"
-            proto_ids.append(pid)
-            name = t.get("name", f"Protocol {i}")
-            addr = self._shorten_addr(t.get("address", ""))
-            lines.append(f'    {pid}["🏛 {name}<br/>{addr}"]')
         lines.append("")
 
-        # ── Derive attack phases from IR actions ───────────────────────
-        present = {a.action_type for a in graph.actions}
-        has_fl_borrow = ActionType.FLASH_LOAN_BORROW in present
-        has_fl_repay = ActionType.FLASH_LOAN_REPAY in present
-        has_liq = ActionType.LIQUIDATION in present
-        has_delegate = ActionType.DELEGATE_CALL in present
-        has_swap = ActionType.DEX_SWAP in present
-        has_governance = ActionType.GOVERNANCE_ACTION in present
-        has_selfdestruct = ActionType.SELF_DESTRUCT in present
-        has_transfers = ActionType.TOKEN_TRANSFER in present or ActionType.ETH_TRANSFER in present
-
-        steps: list[tuple[str, str, str]] = []  # (node_id, label, class)
-        step_num = 1
-
-        if has_fl_borrow:
-            fl_actions = graph.get_actions_by_type(ActionType.FLASH_LOAN_BORROW)
-            amount_hint = ""
-            if fl_actions and "value" in fl_actions[0].params:
-                amount_hint = f"<br/>{fl_actions[0].params['value']:,} wei"
-            steps.append((
-                f"S{step_num}",
-                f"⚡ {step_num}. Flash Loan Borrow{amount_hint}",
-                "flash",
-            ))
-            step_num += 1
-
-        if has_swap:
-            swap_actions = graph.get_actions_by_type(ActionType.DEX_SWAP)
-            steps.append((
-                f"S{step_num}",
-                f"🔄 {step_num}. DEX Swap × {len(swap_actions)}<br/>⚠ spot-price oracle risk",
-                "vuln",
-            ))
-            step_num += 1
-
-        if has_delegate:
-            dc_actions = graph.get_actions_by_type(ActionType.DELEGATE_CALL)
-            targets_str = ", ".join(
-                self._shorten_addr(a.to_addr) for a in dc_actions[:2] if a.to_addr
-            )
-            steps.append((
-                f"S{step_num}",
-                f"📞 {step_num}. DELEGATECALL<br/>⚠ into: {targets_str}",
-                "vuln",
-            ))
-            step_num += 1
-
-        if has_governance:
-            steps.append((
-                f"S{step_num}",
-                f"🗳 {step_num}. Governance Action<br/>⚠ flash-borrowed voting power",
-                "vuln",
-            ))
-            step_num += 1
-
-        if has_liq:
-            liq_actions = graph.get_actions_by_type(ActionType.LIQUIDATION)
-            steps.append((
-                f"S{step_num}",
-                f"⚡ {step_num}. Liquidation × {len(liq_actions)}<br/>⚠ self-liquidation / bonus drain",
-                "vuln",
-            ))
-            step_num += 1
-
-        if has_selfdestruct:
-            steps.append((
-                f"S{step_num}",
-                f"💥 {step_num}. SELFDESTRUCT<br/>⚠ force-ETH injection",
-                "vuln",
-            ))
-            step_num += 1
-
-        # Generic transfers if nothing more specific
-        if has_transfers and not steps:
-            xfer_count = len(graph.get_actions_by_type(ActionType.TOKEN_TRANSFER))
-            xfer_count += len(graph.get_actions_by_type(ActionType.ETH_TRANSFER))
-            steps.append((f"S{step_num}", f"💸 {step_num}. Token/ETH Transfer × {xfer_count}", "xfer"))
-            step_num += 1
-
-        if has_fl_repay:
-            steps.append((f"S{step_num}", f"↩ {step_num}. Flash Loan Repay", "flash"))
-            step_num += 1
-
-        steps.append(("PROFIT", "💰 Profit Extracted", "profit"))
-
-        # Emit step nodes
-        for node_id, label, cls in steps:
-            lines.append(f'    {node_id}["{label}"]')
-        lines.append("")
-
-        # ── Vulnerability & Fix nodes ──────────────────────────────────
-        vuln_fix_pairs: list[tuple[str, str, str, str]] = []  # (vid, fid, vuln_text, fix_text)
-        vf_index = 1
-        for action_type in present:
-            if action_type in _VULN_FIXES:
-                for vuln_desc, fix_desc in _VULN_FIXES[action_type]:
-                    vid = f"V{vf_index}"
-                    fid = f"F{vf_index}"
-                    vuln_fix_pairs.append((vid, fid, vuln_desc, fix_desc))
-                    vf_index += 1
-
-        for vid, fid, vuln_text, fix_text in vuln_fix_pairs:
+        # Vulnerability and fix nodes
+        for vid, fid, vuln_text, fix_text, _ in vuln_fix_nodes:
             lines.append(f'    {vid}["🚨 {vuln_text}"]')
             lines.append(f'    {fid}["🛡 {fix_text}"]')
-        lines.append("")
-
-        # ── Edges ─────────────────────────────────────────────────────
-        lines.append("    %% Attack flow")
-        lines.append(f"    ATTKR -->|initiates| {steps[0][0]}")
-
-        for i in range(len(steps) - 1):
-            cur_id = steps[i][0]
-            nxt_id = steps[i + 1][0]
-            lines.append(f"    {cur_id} --> {nxt_id}")
-
-        # Connect to protocol targets
-        for pid in proto_ids:
-            # Attach the first step to the protocol target
-            if steps:
-                lines.append(f"    {steps[0][0]} -->|targets| {pid}")
 
         lines.append("")
-        lines.append("    %% Vulnerability links")
-        for vid, fid, _, _ in vuln_fix_pairs:
+
+        # Address-to-address edges — aggregated with counts
+        for (f, t), counts in sorted(edge_data.items()):
+            fid_node = addr_to_id.get(f)
+            tid_node = addr_to_id.get(t)
+            if not fid_node or not tid_node:
+                continue
+            parts = []
+            for atype, cnt in sorted(counts.items()):
+                short = _EDGE_LABELS.get(atype, atype)
+                parts.append(short if cnt == 1 else f"{short} x{cnt}")
+            lines.append(f"    {fid_node} -->|{', '.join(parts)}| {tid_node}")
+
+        lines.append("")
+
+        # Vulnerability edges: anchor -.-> Vn -.->|fix| Fn
+        for vid, fid, _, _, anchor in vuln_fix_nodes:
+            anchor_nid = addr_to_id.get(anchor, addr_to_id.get(attack_contract, addr_to_id.get(attacker)))
+            if anchor_nid:
+                lines.append(f"    {anchor_nid} -.->|exposes| {vid}")
             lines.append(f"    {vid} -.->|fix| {fid}")
 
-        # Link vuln nodes back to relevant steps (heuristic: pair by order)
-        vuln_steps = [s for s in steps if s[2] == "vuln"]
-        for i, (vid, fid, _, _) in enumerate(vuln_fix_pairs):
-            if i < len(vuln_steps):
-                step_id = vuln_steps[i][0]
-                lines.append(f"    {step_id} -.->|exposes| {vid}")
-
         lines.append("")
-        lines.append("    %% Class assignments")
-        lines.append("    class ATTKR attacker")
-        lines.append("    class PROFIT profit")
-        for pid in proto_ids:
-            lines.append(f"    class {pid} protocol")
-        for node_id, _, cls in steps:
-            if cls != "profit":
-                lines.append(f"    class {node_id} {cls}")
-        for vid, fid, _, _ in vuln_fix_pairs:
+
+        # Class assignments — addresses
+        for addr in addr_order:
+            nid = addr_to_id[addr]
+            if addr == attacker:
+                cls = "attacker"
+            elif addr == attack_contract:
+                cls = "atk_ctr"
+            elif addr in target_map:
+                cls = "protocol"
+            elif addr in token_addrs:
+                cls = "token"
+            else:
+                cls = "other"
+            lines.append(f"    class {nid} {cls}")
+
+        # Class assignments — vuln/fix nodes
+        for vid, fid, _, _, _ in vuln_fix_nodes:
             lines.append(f"    class {vid} vuln")
             lines.append(f"    class {fid} fix")
 
@@ -357,7 +339,6 @@ class IRVisualizer:
         out_path = output_dir / f"diagram_{safe_name}.md"
 
         forensic = self.to_forensic_flowchart(graph, scenario_config)
-        flowchart = self.to_mermaid_flowchart(graph)
         sequence = self.to_mermaid_sequence(graph)
         fixes = self.extract_security_fixes(graph)
 
@@ -389,12 +370,7 @@ class IRVisualizer:
         lines.append(forensic)
         lines.append("```\n")
 
-        lines.append("## Flowchart\n")
-        lines.append("```mermaid")
-        lines.append(flowchart)
-        lines.append("```\n")
-
-        lines.append("## Sequence Diagram\n")
+        lines.append("## Sequence Diagram")
         lines.append("```mermaid")
         lines.append(sequence)
         lines.append("```\n")

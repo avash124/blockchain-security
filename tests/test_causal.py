@@ -68,24 +68,62 @@ class TestCausalVerifierRunAblation:
         assert results == []
 
     def test_calls_test_without_factor_per_factor(self):
+        # Unreachable upstream RPC → each factor returns an ERROR AblationResult
+        # so the verdict engine still receives a result per factor.
         fm = MagicMock(spec=ForkManager)
         verifier = CausalVerifier(fork_manager=fm, rpc_url="http://fake:8545")
 
         factors = [
-            {"type": "flash_loan", "action_id": "flash_loan_borrow_0"},
-            {"type": "dex_swap", "action_id": "dex_swap_5"},
+            {"name": "flash_loan", "anvil_method": "anvil_setBalance", "address": "0xabc"},
+            {"name": "dex_swap", "anvil_method": "anvil_setStorageAt", "address": "0xabc", "slot": "0x0"},
         ]
-        with pytest.raises(NotImplementedError):
-            verifier.run_ablation("0xdeadbeef", 12345, factors)
+        results = verifier.run_ablation("0xdeadbeef", 12345, factors)
+        assert len(results) == 2
+        assert all(r.outcome == AblationOutcome.ERROR for r in results)
+        assert results[0].factor_removed == "flash_loan"
+        assert results[1].factor_removed == "dex_swap"
 
-    def test_test_without_factor_is_stub(self):
+    def test_test_without_factor_errors_when_rpc_unreachable(self):
         fm = MagicMock(spec=ForkManager)
         verifier = CausalVerifier(fork_manager=fm, rpc_url="http://fake:8545")
-        with pytest.raises(NotImplementedError):
-            verifier._test_without_factor("0xdeadbeef", 12345, {"type": "flash_loan"})
+        result = verifier._test_without_factor(
+            "0xdeadbeef",
+            12345,
+            {"name": "flash_loan", "anvil_method": "anvil_setBalance", "address": "0xabc"},
+        )
+        assert isinstance(result, AblationResult)
+        assert result.outcome == AblationOutcome.ERROR
+        assert result.factor_removed == "flash_loan"
 
-    def test_apply_counterfactual_is_stub(self):
+    def test_apply_counterfactual_rejects_missing_method(self):
         fm = MagicMock(spec=ForkManager)
         verifier = CausalVerifier(fork_manager=fm, rpc_url="http://fake:8545")
-        with pytest.raises(NotImplementedError):
+        with pytest.raises(ValueError, match="anvil_method"):
             verifier._apply_counterfactual({"type": "flash_loan"}, "http://fake:8545")
+
+    def test_apply_counterfactual_rejects_missing_address(self):
+        fm = MagicMock(spec=ForkManager)
+        verifier = CausalVerifier(fork_manager=fm, rpc_url="http://fake:8545")
+        with pytest.raises(ValueError, match="address"):
+            verifier._apply_counterfactual(
+                {"name": "x", "anvil_method": "anvil_setBalance"},
+                "http://fake:8545",
+            )
+
+    def test_apply_counterfactual_rejects_missing_slot(self):
+        fm = MagicMock(spec=ForkManager)
+        verifier = CausalVerifier(fork_manager=fm, rpc_url="http://fake:8545")
+        with pytest.raises(ValueError, match="slot"):
+            verifier._apply_counterfactual(
+                {"name": "x", "anvil_method": "anvil_setStorageAt", "address": "0xabc"},
+                "http://fake:8545",
+            )
+
+    def test_apply_counterfactual_rejects_unsupported_method(self):
+        fm = MagicMock(spec=ForkManager)
+        verifier = CausalVerifier(fork_manager=fm, rpc_url="http://fake:8545")
+        with pytest.raises(ValueError, match="unsupported"):
+            verifier._apply_counterfactual(
+                {"name": "x", "anvil_method": "anvil_setBogus", "address": "0xabc"},
+                "http://fake:8545",
+            )
