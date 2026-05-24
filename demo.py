@@ -23,11 +23,18 @@ def main():
     )
 
     if len(sys.argv) < 2:
-        print("Usage: python demo.py <scenario_name>")
-        print("Available scenarios: euler, nomad, beanstalk")
+        print("Usage: python demo.py <scenario_name> [--skip-ablation|--run-ablation]")
+        print("Available scenarios: euler, cream, harvest, beanstalk")
         sys.exit(1)
 
-    scenario_name = sys.argv[1]
+    args = sys.argv[1:]
+    scenario_name = args[0]
+    # Ablation is opt-in for now: the predefined causal factors in
+    # _TECHNIQUE_FACTORS don't carry address/slot params yet, so the
+    # ablation step burns 1–3 minutes per scenario producing only ERROR
+    # outcomes. Use --run-ablation explicitly when you've populated the
+    # factor params for the technique you're verifying.
+    skip_ablation = "--run-ablation" not in args
     scenarios_dir = Path(__file__).parent / "scenarios"
 
     if not (scenarios_dir / scenario_name).exists():
@@ -40,6 +47,7 @@ def main():
         etherscan_api_key=os.getenv("ETHERSCAN_API_KEY", ""),
         anthropic_api_key=os.getenv("OPENAI_API_KEY", ""),
         output_dir=Path("output"),
+        skip_ablation=skip_ablation,
     )
 
     if not config.rpc_url:
