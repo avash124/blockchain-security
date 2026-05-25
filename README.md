@@ -1,6 +1,6 @@
-# BigChain — Blockchain Forensics & Security Analysis Pipeline
+# WireBlock — Blockchain Forensics & Security Analysis Pipeline
 
-BigChain is a production-grade forensic analysis pipeline for detecting, classifying, and verifying cryptocurrency exploit transactions on Ethereum. Given a transaction hash and a fork block, it orchestrates a full end-to-end investigation: tracing EVM execution, lifting opcodes to semantic actions, classifying the attack technique via agentic reasoning, verifying findings through deterministic predicates and counterfactual ablation, and rendering an interactive HTML forensic report.
+WireBlock is a production-grade forensic analysis pipeline for detecting, classifying, and verifying cryptocurrency exploit transactions on Ethereum. Given a transaction hash and a fork block, it orchestrates a full end-to-end investigation: tracing EVM execution, lifting opcodes to semantic actions, classifying the attack technique via agentic reasoning, verifying findings through deterministic predicates and counterfactual ablation, and rendering an interactive HTML forensic report.
 
 ---
 
